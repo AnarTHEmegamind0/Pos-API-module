@@ -1,0 +1,395 @@
+{
+  "info": {
+    "_postman_id": "32675bb0-a3be-4f09-b1e2-8544df7f705b",
+    "name": "posapi-module",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "_exporter_id": "3424436"
+  },
+  "item": [
+    {
+      "name": "=== WRAPPER Services ===",
+      "item": [
+        {
+          "name": "Баримт үүсгэх",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"OrderId\": \"ORD-1002\",\r\n  \"CustomerTin\": \"61200064714\",\r\n  \"MerchantTin\": \"37900846788\",\r\n  \"Items\": [\r\n    {\r\n      \"barCode\": \"ITEM-001\",\r\n      \"name\": \"Test Item A\",\r\n      \"qty\": 2,\r\n      \"unitPrice\": 1000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/addBill"
+          },
+          "response": []
+        },
+        {
+          "name": "Баримт засах",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"OrderId\": \"ORD-1003\",\r\n  \"CustomerTin\": \"61200064714\",\r\n  \"MerchantTin\": \"37900846788\",\r\n  \"Items\": [\r\n    {\r\n      \"barCode\": \"ITEM-002\",\r\n      \"name\": \"Test Item A\",\r\n      \"qty\": 2,\r\n      \"unitPrice\": 1000,\r\n      \"EVAT\": \"VAT_ABLE\",\r\n      \"isNhat\": false\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/updateBill"
+          },
+          "response": []
+        },
+        {
+          "name": "Баримт устгах",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"OrderId\": \"ORD-1001\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/deleteBill"
+          },
+          "response": []
+        },
+        {
+          "name": "Тохиргоо авах",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:4001/posapi"
+          },
+          "response": []
+        },
+        {
+          "name": "Тохиргоо үүсгэх",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"merchantTin\": \"37900846789\",\r\n    \"posNo\": \"101319842\",\r\n    \"districtCode\": \"3504\",\r\n    \"branchNo\": \"001\",\r\n    \"billIdSuffix\": \"01\",\r\n    \"updatedAt\": \"2025-11-04 05:28:22\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Тохиргоо засах",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "http://localhost:4001/posapi/settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Тохиргоо устгах",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://localhost:4001/posapi/settings"
+          },
+          "response": []
+        },
+        {
+          "name": "Баримт үүсгэх-Invoice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"OrderId\": \"ORD-1004\",\r\n  \"CustomerTin\": \"61200064714\",\r\n  \"MerchantTin\": \"37900846788\",\r\n  \"Items\": [\r\n    {\r\n      \"barCode\": \"ITEM-001\",\r\n      \"name\": \"Test Item A\",\r\n      \"qty\": 2,\r\n      \"unitPrice\": 1000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/addBillInvoice"
+          },
+          "response": []
+        },
+        {
+          "name": "Баримт засах-Invoice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"OrderId\": \"ORD-1004\",\r\n  \"CustomerTin\": \"61200064714\",\r\n  \"MerchantTin\": \"37900846788\",\r\n  \"Items\": [\r\n    {\r\n      \"barCode\": \"ITEM-002\",\r\n      \"name\": \"Test Item A\",\r\n      \"qty\": 2,\r\n      \"unitPrice\": 1000,\r\n      \"EVAT\": \"VAT_ABLE\",\r\n      \"isNhat\": false\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:4001/posapi/updateBillInvoice"
+          },
+          "response": []
+        },
+        {
+          "name": "Logs of sent data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4001/posapi/logs?limit=20&offset=0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4001",
+              "path": ["posapi", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logs of returned data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4001/posapi/returns?limit=20&offset=0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4001",
+              "path": ["posapi", "returns"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logs of updated data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4001/posapi/updates?limit=20&offset=0",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4001",
+              "path": ["posapi", "updates"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Дүүргүүдийн мэдээлэл",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:4001/posapi/info/branches"
+          },
+          "response": []
+        },
+        {
+          "name": "ТТД лавлах",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "ТТ Бүртгэлийн мэдээлэл",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Бараа үйлчилгээний мэдээлэл",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:4001/posapi/info/product-tax-codes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "=== POSAPI Services ===",
+      "item": [
+        {
+          "name": "Төлбөрийн баримт хадгалах",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"branchNo\": \"001\",\r\n  \"totalAmount\": 5600,\r\n  \"totalVAT\": 500,    \r\n  \"totalCityTax\": 100,    \r\n  \"districtCode\": \"2501\",\r\n  \"merchantTin\": \"110718991986\",\r\n  \"posNo\": \"001\",\r\n  \"customerTin\" : null,\r\n  \"consumerNo\": \"10038071\",\r\n  \"type\": \"B2C_RECEIPT\",\r\n  \"inactiveId\": null,\r\n  \"reportMonth\": null,\r\n  \"billIdSuffix\": \"01\",\r\n  \"receipts\": [\r\n    {\r\n      \"totalAmount\": 5600,\r\n      \"taxType\": \"VAT_ABLE\",\r\n      \"merchantTin\": \"110718991986\",\r\n      \"customerTin\" : null,\r\n      \"totalVAT\": 500.00,\r\n      \"totalCityTax\": 100,\r\n      \"bankAccountNo\": \"\",\r\n      \"invoiceId\": null,\r\n      \"iBan\": \"\",\r\n      \"items\": [\r\n        {\r\n          \"name\": \"Талх\",\r\n          \"barCode\": \"19059010880001\",\r\n          \"barCodeType\": \"GS1\",\r\n          \"classificationCode\": \"2349010\",\r\n          \"taxProductCode\": null,\r\n          \"measureUnit\": \"senlovesfits\",\r\n          \"qty\": 1,\r\n          \"unitPrice\": 5000,\r\n          \"totalVAT\": 500,\r\n          \"totalCityTax\": 100,\r\n          \"totalAmount\": 5600\r\n        }\r\n \r\n      ]\r\n    }\r\n  ],\r\n  \"payments\": [\r\n    {\r\n    \"code\":\"CASH\",\r\n    \"status\": \"PAID\",\r\n    \"paidAmount\":5600\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/rest/receipt"
+          },
+          "response": []
+        },
+        {
+          "name": "Төлбөрийн баримт буцаах",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"id\": \"string\",\r\n  \"date\": \"2019-08-24\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/rest/receipt"
+          },
+          "response": []
+        },
+        {
+          "name": "Ажиллагааны мэдээлэл хүлээн авах",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Төлбөрийн баримтын нэгдсэн системд мэдээлэл илгээх",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/rest/sendData"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "=== EBarimt Services ===",
+      "item": [
+        {
+          "name": "District_code лавлах",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://api.ebarimt.mn/api/info/check/getBranchInfo"
+          },
+          "response": []
+        },
+        {
+          "name": "Татвар төлөгчийн дугаар лавлах /ТIN, Civil_id/",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "Бүртгэлийн мэдээлэл лавлах",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://api.ebarimt.mn/api/info/check/getInfo?tin=93202263351",
+              "protocol": "https",
+              "host": ["api", "ebarimt", "mn"],
+              "path": ["api", "info", "check", "getInfo"],
+              "query": [
+                {
+                  "key": "tin",
+                  "value": "93202263351"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "VAT_FREE, VAT_ZERO, NO_VAT бараа, үйлчилгээний код лавлах",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://api.ebarimt.mn/api/receipt/receipt/getProductTaxCode"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "postapi-module",
+  "version": "1.0.1",
+  "description": "POSAPI-3 Service",
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    "./*": "./dist/*.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier -w .",
+    "lint": "eslint .",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3",
+    "pino": "^10.1.0",
+    "pino-http": "^11.0.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.4",
+    "@types/node": "^24.9.1",
+    "@types/pg": "^8.16.0",
+    "@types/sqlite3": "^3.1.11",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "pino-pretty": "^13.1.2",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "posapi",
+    "ebarimt",
+    "vat",
+    "receipt",
+    "node",
+    "typescript"
+  ]
+}
