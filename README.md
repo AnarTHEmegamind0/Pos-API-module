@@ -1,191 +1,329 @@
-# 🧾 POSAPI Module
+# POS API Module
 
-A lightweight REST service for managing **E-Barimt POS operations**, receipt logs, and configuration data for merchants.  
-This module provides both wrapper endpoints for internal system integration and direct access to the official **E-Barimt API**.
+ST-Ebarimt API-тай холбогдох модуль. Frontend-ээс бэлэн тооцоолсон JSON хүлээн авч баримт үүсгэнэ.
 
----
+## Суулгалт
 
-## 🚀 Overview
+```bash
+# Dependencies суулгах
+npm install
 
-The **posapi-module** acts as a middleware between your e-commerce or POS backend and the official Mongolian E-Barimt API.  
-It handles:
-- Receipt creation, updates, and deletion  
-- Invoice and non-invoice bill posting  
-- Return and update logs  
-- Configuration management (merchant, branch, POS settings)  
-- Integration with E-Barimt reference endpoints
+# Build хийх
+npm run build
 
----
+# Эхлүүлэх
+npm start
 
-## 🧩 Base URL
-
-```
-http://localhost:4001/posapi
+# Development mode
+npm run dev
 ```
 
----
+## Тохиргоо
 
-## 📦 Endpoints
+### Environment Variables
 
-### === WRAPPER Services ===
+`.env` файл үүсгэх:
 
-| Endpoint | Method | Description |
-|-----------|---------|-------------|
-| `/addBill` | `POST` | Create new receipt (Баримт үүсгэх) |
-| `/updateBill` | `POST` | Update existing receipt (Баримт засах) |
-| `/deleteBill` | `POST` | Delete a receipt by orderId (Баримт устгах) |
-| `/addBillInvoice` | `POST` | Create B2B/B2C invoice type receipt |
-| `/updateBillInvoice` | `POST` | Update invoice type receipt |
-| `/settings` | `GET` | Retrieve POS API settings (Тохиргоо авах) |
-| `/settings` | `POST` | Create or upsert settings (Тохиргоо үүсгэх) |
-| `/settings` | `PUT` | Update settings (Тохиргоо засах) |
-| `/settings` | `DELETE` | Delete settings (Тохиргоо устгах) |
-| `/logs` | `GET` | View logs of sent receipts |
-| `/returns` | `GET` | View logs of returned (deleted) receipts |
-| `/updates` | `GET` | View logs of updated receipts |
-| `/info/branches` | `GET` | Get list of districts and branches (Дүүргүүдийн мэдээлэл) |
-| `/info/product-tax-codes` | `GET` | Retrieve VAT category codes (Бараа үйлчилгээний мэдээлэл) |
+```env
+# Заавал
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/posapi
 
----
+# Optional
+PORT=4001
+POS_API_BASE_URL=http://127.0.0.1:7080
+```
 
-### === POSAPI Services ===
+### POS Settings (Database)
 
-| Endpoint | Method | Description |
-|-----------|---------|-------------|
-| `/rest/receipt` | `POST` | Save a payment receipt (Төлбөрийн баримт хадгалах) |
-| `/rest/receipt` | `DELETE` | Return or cancel a receipt (Төлбөрийн баримт буцаах) |
-| `/rest/sendData` | `GET` | Send stored receipts to E-Barimt system |
-| `/rest/info` | `GET` | Fetch operational info from E-Barimt |
+POS тохиргоог API-аар дамжуулан DB-д хадгална:
 
----
+```bash
+# Тохиргоо нэмэх/засах
+curl -X POST http://localhost:4001/posapi/settings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "merchantTin": "37900846788",
+    "posNo": "10012188",
+    "districtCode": "3402",
+    "branchNo": "001",
+    "billIdSuffix": "01"
+  }'
 
-### === E-Barimt Services ===
+# Тохиргоо харах
+curl http://localhost:4001/posapi/settings/37900846788
+```
 
-| Endpoint | Description |
-|-----------|-------------|
-| `https://api.ebarimt.mn/api/info/check/getBranchInfo` | Get district (branch) info |
-| `https://api.ebarimt.mn/api/info/check/getInfo?tin={TIN}` | Get merchant or entity registration info |
-| `https://api.ebarimt.mn/api/receipt/receipt/getProductTaxCode` | Get product tax codes for VAT classification |
+## API Endpoints
 
----
+### Bills
 
-## 🧠 Example Requests
+| Method | Endpoint                   | Тайлбар                    |
+| ------ | -------------------------- | -------------------------- |
+| POST   | `/posapi/addBill`          | Баримт үүсгэх              |
+| POST   | `/posapi/updateBill`       | Баримт засах               |
+| POST   | `/posapi/deleteBill`       | Баримт устгах              |
+| GET    | `/posapi/receipt/:orderId` | Баримт хайх                |
+| POST   | `/posapi/sendBills`        | Pending баримтуудыг илгээх |
 
-### ➤ Create a Bill
-```http
+### Settings
+
+| Method | Endpoint                        | Тайлбар              |
+| ------ | ------------------------------- | -------------------- |
+| GET    | `/posapi/settings`              | Бүх тохиргоо         |
+| GET    | `/posapi/settings/:merchantTin` | Тохиргоо харах       |
+| POST   | `/posapi/settings`              | Тохиргоо нэмэх/засах |
+| DELETE | `/posapi/settings/:merchantTin` | Тохиргоо устгах      |
+
+### Info
+
+| Method | Endpoint             | Тайлбар      |
+| ------ | -------------------- | ------------ |
+| GET    | `/posapi/info`       | POS мэдээлэл |
+| GET    | `/posapi/tin/:regNo` | ТТД мэдээлэл |
+| GET    | `/health`            | Health check |
+
+## Баримтын төрлүүд
+
+| Төрөл         | Тайлбар                |
+| ------------- | ---------------------- |
+| `B2C_RECEIPT` | Иргэнд баримт          |
+| `B2B_RECEIPT` | Байгууллагад баримт    |
+| `B2C_INVOICE` | Иргэнд нэхэмжлэх       |
+| `B2B_INVOICE` | Байгууллагад нэхэмжлэх |
+
+## Request/Response жишээ
+
+### Баримт үүсгэх (B2C Receipt)
+
+**Request:**
+
+```json
 POST /posapi/addBill
-Content-Type: application/json
-
 {
-  "OrderId": "ORD-1002",
-  "CustomerTin": "61200064714",
-  "MerchantTin": "37900846788",
-  "Items": [
-    { "barCode": "ITEM-001", "name": "Test Item A", "qty": 2, "unitPrice": 1000 }
-  ]
-}
-```
-
-### ➤ Update a Bill
-```http
-POST /posapi/updateBill
-{
-  "OrderId": "ORD-1003",
-  "CustomerTin": "61200064714",
-  "MerchantTin": "37900846788",
-  "Items": [
+  "orderId": "ORDER-123",
+  "type": "B2C_RECEIPT",
+  "totalAmount": 1000,
+  "totalVAT": 89.29,
+  "totalCityTax": 17.86,
+  "merchantTin": "37900846788",
+  "districtCode": "3402",
+  "branchNo": "001",
+  "posNo": "10012188",
+  "customerTin": "",
+  "receipts": [
     {
-      "barCode": "ITEM-002",
-      "name": "Test Item A",
-      "qty": 2,
-      "unitPrice": 1000,
-      "EVAT": "VAT_ABLE",
-      "isNhat": false
+      "taxType": "VAT_ABLE",
+      "merchantTin": "37900846788",
+      "totalAmount": 1000,
+      "totalVAT": 89.29,
+      "totalCityTax": 17.86,
+      "items": [
+        {
+          "name": "Бараа",
+          "barCode": "8901234567890",
+          "barCodeType": "GS1",
+          "classificationCode": "1410101",
+          "measureUnit": "ш",
+          "qty": 1,
+          "unitPrice": 1000,
+          "totalAmount": 1000,
+          "totalVAT": 89.29,
+          "totalCityTax": 17.86
+        }
+      ]
+    }
+  ],
+  "payments": [
+    {
+      "code": "CASH",
+      "status": "PAID",
+      "paidAmount": 1000
     }
   ]
 }
 ```
 
-### ➤ Create POS Settings
-```http
-POST /posapi/settings
+**Response:**
+
+```json
 {
-  "merchantTin": "37900846789",
-  "posNo": "101319842",
-  "districtCode": "3504",
-  "branchNo": "001",
-  "billIdSuffix": "01",
-  "updatedAt": "2025-11-04 05:28:22"
+  "success": true,
+  "message": "Data posted successfully",
+  "data": {
+    "orderId": "ORDER-123",
+    "id": "037900846788001095050007210012476",
+    "qrData": "1674169843884832895609011647941428576380654372755171632964501824942616901030312621213955059925866215849636916426660184761962962015786278739255817891949332404392021770750661327556881",
+    "lottery": "PT 13752644",
+    "date": "2026-01-15 08:10:51",
+    "totalAmount": 1000,
+    "totalVAT": 89.29,
+    "totalCityTax": 17.86,
+    "status": "SUCCESS"
+  }
 }
 ```
 
----
+### Байгууллагад баримт (B2B Receipt)
 
-## 🧾 Logging Endpoints
+```json
+POST /posapi/addBill
+{
+  "orderId": "ORDER-124",
+  "type": "B2B_RECEIPT",
+  "customerTin": "12345678",
+  "totalAmount": 5000,
+  "totalVAT": 446.43,
+  "totalCityTax": 89.29,
+  ...
+}
+```
 
-| Route | Description |
-|--------|--------------|
-| `/logs?limit=20&offset=0` | Logs of sent receipts |
-| `/returns?limit=20&offset=0` | Logs of returned (cancelled) receipts |
-| `/updates?limit=20&offset=0` | Logs of updated receipts |
+### Нэхэмжлэх (Invoice)
 
----
+```json
+POST /posapi/addBill
+{
+  "orderId": "INV-125",
+  "type": "B2C_INVOICE",
+  "totalAmount": 10000,
+  ...
+  "payments": [
+    {
+      "code": "CASH",
+      "status": "PAID",
+      "paidAmount": 10000
+    }
+  ]
+}
+```
 
-## ⚙️ Environment Variables
+### Баримт устгах
 
-| Key | Description |
-|-----|-------------|
-| `DB_PATH` | SQLite file path (default: `data/posapi.db`) |
-| `MERCHANT_TIN` | Default merchant TIN |
-| `POS_NO` | POS terminal number |
-| `DISTRICT_CODE` | District or branch code |
-| `BRANCH_NO` | Branch number |
-| `BILL_ID_SUFFIX` | Suffix used in bill numbering |
+**Request:**
 
----
+```json
+POST /posapi/deleteBill
+{
+  "orderId": "ORDER-123",
+  "merchantTin": "37900846788"
+}
+```
 
-## 🧑‍💻 Development
+**Response:**
 
-### Start local server
+```json
+{
+  "success": true,
+  "message": "Data deleted successfully",
+  "data": null
+}
+```
+
+### Баримт хайх
+
 ```bash
-npm install
-npm run dev
+GET /posapi/receipt/ORDER-123?merchantTin=37900846788
 ```
 
-Server will start on:
-```
-http://localhost:4001
-```
+**Response:**
 
-### Database
-SQLite database auto-creates under `data/posapi.db` with the following tables:
-- `pos_api_logs`
-- `pos_api_update_logs`
-- `pos_api_return_bill_logs`
-- `pos_api_settings`
-
----
-
-## 📘 Notes
-- Each merchant’s configuration is uniquely identified by `merchantTin`.  
-- All receipt logs are automatically recorded (create, update, return).  
-- Invoice routes automatically choose between `B2B_INVOICE` and `B2C_INVOICE` types.  
-- Supports integration with external backends such as **NestJS**, **Flutter**, or **DevExpress ERP** modules.
-
----
-
-## 📂 Postman Collection
-
-Import the included file:
-
-```
-posapi-module.postman_collection.json
+```json
+{
+  "success": true,
+  "message": "Receipt found",
+  "data": {
+    "orderId": "ORDER-123",
+    "merchantTin": "37900846788",
+    "ebarimtId": "037900846788001095050007210012476",
+    "lottery": "PT 13752644",
+    "qrData": "...",
+    "totalAmount": 1000,
+    "totalVat": 89.29,
+    "totalCityTax": 17.86,
+    "receiptType": "B2C_RECEIPT",
+    "success": true,
+    "createdAt": "2026-01-15T08:10:51.000Z"
+  }
+}
 ```
 
-Use it to test endpoints quickly with predefined examples.
+## DB Schema
 
----
+### pos_api_receipts
 
-## 🏁 License
+Баримтын бүрэн мэдээлэл хадгалах table.
 
-MIT © 2025 — STAR SHOP POS API Wrapper  
+| Column         | Type        | Тайлбар                     |
+| -------------- | ----------- | --------------------------- |
+| id             | SERIAL      | Primary key                 |
+| order_id       | TEXT        | Захиалгын ID (frontend-ээс) |
+| merchant_tin   | TEXT        | Худалдагчийн ТТД            |
+| request_json   | JSONB       | Илгээсэн request            |
+| response_json  | JSONB       | ST-Ebarimt-ийн хариу        |
+| ebarimt_id     | TEXT        | Баримтын ID                 |
+| lottery        | TEXT        | Сугалааны дугаар            |
+| qr_data        | TEXT        | QR код                      |
+| total_amount   | DECIMAL     | Нийт дүн                    |
+| total_vat      | DECIMAL     | НӨАТ                        |
+| total_city_tax | DECIMAL     | НХАТ                        |
+| receipt_type   | TEXT        | Баримтын төрөл              |
+| success        | BOOLEAN     | Амжилттай эсэх              |
+| error_message  | TEXT        | Алдааны мэдээлэл            |
+| created_at     | TIMESTAMPTZ | Үүсгэсэн огноо              |
+| updated_at     | TIMESTAMPTZ | Засварласан огноо           |
+
+### pos_api_settings
+
+POS тохиргоо хадгалах table.
+
+| Column         | Type        | Тайлбар           |
+| -------------- | ----------- | ----------------- |
+| merchant_tin   | TEXT        | Primary key - ТТД |
+| pos_no         | TEXT        | POS дугаар        |
+| district_code  | TEXT        | Дүүргийн код      |
+| branch_no      | TEXT        | Салбарын дугаар   |
+| bill_id_suffix | TEXT        | Баримтын suffix   |
+| updated_at     | TIMESTAMPTZ | Засварласан огноо |
+
+## Postman Collection
+
+`postman/POS-API-Collection.json` файлыг Postman-д import хийж ашиглана.
+
+## Татвар тооцоолол
+
+Frontend дээр татвар тооцоолох жишээ:
+
+```javascript
+// Нийт дүнгээс татвар тооцоолох (НӨАТ + НХАТ багтсан үнэ)
+function calculateTaxes(totalAmount, hasVAT, hasNHAT) {
+  let divisor = 1;
+  if (hasVAT) divisor += 0.1; // 10% НӨАТ
+  if (hasNHAT) divisor += 0.02; // 2% НХАТ
+
+  const baseAmount = totalAmount / divisor;
+  const vat = hasVAT ? baseAmount * 0.1 : 0;
+  const nhat = hasNHAT ? baseAmount * 0.02 : 0;
+
+  return {
+    baseAmount: round2(baseAmount),
+    totalVAT: round2(vat),
+    totalCityTax: round2(nhat),
+    totalAmount: totalAmount,
+  };
+}
+
+// Жишээ: 1000₮ (НӨАТ + НХАТ багтсан)
+// calculateTaxes(1000, true, true)
+// => { baseAmount: 892.86, totalVAT: 89.29, totalCityTax: 17.86, totalAmount: 1000 }
+```
+
+## Төлбөрийн төрлүүд
+
+| Code           | Тайлбар     |
+| -------------- | ----------- |
+| `CASH`         | Бэлэн мөнгө |
+| `PAYMENT_CARD` | Карт        |
+
+## License
+
+MIT

@@ -4,96 +4,29 @@ import express from "express";
 import cors from "cors";
 
 import { PosApiWrapper } from "./wrapper.js";
-import type { CReceipt } from "./types.js";
-import type { PosApiLog as DomainPosApiLog } from "./log-types.js";
+import type { DirectBillRequest, DeleteBillRequest } from "./types.js";
 
 // DB helpers
 import {
   initDb,
-  saveOrderLog,
-  saveReturnBillLog,
-  findLogByOrderIdAndTin,
-  findLogByOrderId, // fallback
-  saveUpdateBillLog,
+  findReceiptByOrderId,
+  findReceiptByOrderIdOnly,
 } from "./db.js";
 
 import { logsRouter } from "./routes/logs.js";
 import { settingsRouter } from "./routes/settings.js";
 import { ebarimtInfoRouter } from "./routes/ebarimt-info.js";
-import { EReceiptType } from "./enums.js";
 
 (async () => {
   await initDb();
-  console.log("🗄️ Database ready.");
+  console.log("Database ready.");
 })();
 
-console.log("✅ POS Service initialized. Waiting for requests...\n");
-
-function normalizeDbLogToDomain(row: any): DomainPosApiLog {
-  return {
-    id: row?.id ?? "",
-    date: new Date(row?.date ?? Date.now()),
-    orderId: row?.orderId ?? "",
-    merchantTin: row?.merchantTin ?? "",
-    success: !!row?.success,
-    message: row?.message ?? "",
-    errorCode: row?.errorCode ?? undefined,
-  };
-}
+console.log("POS Service initialized. Waiting for requests...\n");
 
 const posapi = new PosApiWrapper({
-  writeLogOrderData: async (apiResult, orderId, merchantTin) => {
-    const payload = apiResult?.data ?? apiResult;
-    await saveOrderLog(payload, orderId, merchantTin);
-
-    console.log(
-      `🧾 [Order Created]
-  • OrderId: ${orderId}
-  • Id: ${payload?.id ?? "(unknown)"}
-  • MerchantTin: ${merchantTin}
-  • Status: Successfully submitted to POS
-`,
-    );
-  },
-
-  writeLogReturnBill: async (
-    oldLog: DomainPosApiLog,
-    orderId: string,
-    msg: string,
-  ) => {
-    await saveReturnBillLog(oldLog, orderId, msg);
-
-    console.log(
-      `↩️ [Order Returned]
-  • OrderId: ${orderId}
-  • Id: ${oldLog.id}
-  • MerchantTin: ${oldLog.merchantTin ?? ""}
-  • Message: ${msg}
-  • Status: Successfully cancelled
-`,
-    );
-  },
-
-  // new signature: we get both orderId and merchantTin
-  findPosApiLogByOrderId: async (orderId: string, merchantTin: string) => {
-    let row = null;
-    if (merchantTin) {
-      row = await findLogByOrderIdAndTin(orderId, merchantTin);
-    } else {
-      // fallback for very old clients
-      row = await findLogByOrderId(orderId);
-    }
-
-    if (!row) {
-      console.log(
-        `🔍 No log found for OrderId: ${orderId} (merchantTin=${merchantTin})`,
-      );
-      return null;
-    }
-    return normalizeDbLogToDomain(row);
-  },
-
-  notifyError: (msg: string) => console.error(`❌ [POS Error] → ${msg}\n`),
+  notifyError: (msg: string) => console.error(`[POS Error] ${msg}\n`),
+  notifySuccess: (msg: string) => console.log(`[POS Success] ${msg}\n`),
 });
 
 const app = express();
@@ -118,54 +51,77 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "postapi-module",
+    service: "posapi-module",
     ts: new Date().toISOString(),
   });
 });
 
-// ADD
+// ========== ADD BILL ==========
 app.post("/posapi/addBill", async (req, res) => {
-  const order = req.body as CReceipt;
-  const result = await posapi.POST_BILL(order);
-  res.json(result);
-});
-
-// ADD invoice
-app.post("/posapi/addBillInvoice", async (req, res) => {
-  const order = req.body as CReceipt;
   try {
-    const invoiceType = order.CustomerTin
-      ? EReceiptType.B2B_INVOICE
-      : EReceiptType.B2C_INVOICE;
+    const payload = req.body as DirectBillRequest;
 
-    const result = await posapi.POST_BILL_TYPE(order, invoiceType);
+    // Validation
+    if (!payload.orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId is required",
+        data: null,
+      });
+    }
+
+    if (!payload.merchantTin) {
+      return res.status(400).json({
+        success: false,
+        message: "merchantTin is required",
+        data: null,
+      });
+    }
+
+    if (!payload.receipts || payload.receipts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "receipts array is required and must not be empty",
+        data: null,
+      });
+    }
+
+    const result = await posapi.POST_BILL(payload);
     return res.json(result);
   } catch (err: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: err?.message ?? "Failed to add invoice bill",
+      message: err?.message ?? "Failed to add bill",
       data: null,
     });
   }
 });
 
-// UPDATE bill
+// ========== UPDATE BILL ==========
 app.post("/posapi/updateBill", async (req, res) => {
-  const order = req.body as CReceipt;
-
   try {
-    const merchantTin = (order as any).MerchantTin ?? "";
+    const payload = req.body as DirectBillRequest;
+    const { orderId, merchantTin } = payload;
 
+    // Validation
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId is required",
+        data: null,
+      });
+    }
+
+    // Хуучин баримт хайх
     let existing = null;
-    if (!order.PreviousReceiptId) {
-      // now try with merchantTin first
+    if (!payload.inactiveId) {
       if (merchantTin) {
-        existing = await findLogByOrderIdAndTin(order.OrderId, merchantTin);
+        existing = await findReceiptByOrderId(orderId, merchantTin);
       } else {
-        existing = await findLogByOrderId(order.OrderId);
+        existing = await findReceiptByOrderIdOnly(orderId);
       }
 
-      if (!existing?.id) {
+      if (!existing?.ebarimtId) {
         return res.status(404).json({
           success: false,
           message:
@@ -173,24 +129,12 @@ app.post("/posapi/updateBill", async (req, res) => {
           data: null,
         });
       }
-      order.PreviousReceiptId = existing.id;
+
+      // inactiveId-г хуучин баримтын ID-аар тохируулах
+      payload.inactiveId = existing.ebarimtId;
     }
 
-    const result = await posapi.POST_BILL(order);
-
-    if (result?.success && result?.data?.id) {
-      const merchantTinForUpdate =
-        (order as any).MerchantTin ?? existing?.merchantTin ?? "";
-
-      await saveUpdateBillLog({
-        orderId: order.OrderId,
-        oldId: order.PreviousReceiptId!,
-        newId: result.data.id,
-        date: result.data.date ?? new Date(),
-        merchantTin: merchantTinForUpdate,
-      });
-    }
-
+    const result = await posapi.POST_BILL(payload);
     return res.json(result);
   } catch (err: any) {
     return res.status(500).json({
@@ -201,91 +145,85 @@ app.post("/posapi/updateBill", async (req, res) => {
   }
 });
 
-// UPDATE bill invoice
-app.post("/posapi/updateBillInvoice", async (req, res) => {
-  const order = req.body as CReceipt;
-
-  try {
-    const merchantTin = (order as any).MerchantTin ?? "";
-
-    let existing = null;
-    if (!order.PreviousReceiptId) {
-      if (merchantTin) {
-        existing = await findLogByOrderIdAndTin(order.OrderId, merchantTin);
-      } else {
-        existing = await findLogByOrderId(order.OrderId);
-      }
-
-      if (!existing?.id) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "No existing bill found for provided OrderId; cannot perform invoice update.",
-          data: null,
-        });
-      }
-      order.PreviousReceiptId = existing.id;
-    }
-
-    const invoiceType = order.CustomerTin
-      ? EReceiptType.B2B_INVOICE
-      : EReceiptType.B2C_INVOICE;
-
-    const result = await posapi.POST_BILL_TYPE(order, invoiceType);
-
-    if (result?.success && result?.data?.id) {
-      const merchantTinForUpdate =
-        (order as any).MerchantTin ?? existing?.merchantTin ?? "";
-
-      await saveUpdateBillLog({
-        orderId: order.OrderId,
-        oldId: order.PreviousReceiptId!,
-        newId: result.data.id,
-        date: result.data.date ?? new Date(),
-        merchantTin: merchantTinForUpdate,
-      });
-    }
-
-    return res.json(result);
-  } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err?.message ?? "Failed to update invoice bill",
-      data: null,
-    });
-  }
-});
-
-// DELETE
+// ========== DELETE BILL ==========
 app.post("/posapi/deleteBill", async (req, res) => {
   try {
-    const order: CReceipt = req.body;
+    const payload = req.body as DeleteBillRequest;
 
-    // make sure MerchantTin is present, otherwise wrapper will log “not found”
-    if (!order.MerchantTin) {
+    if (!payload.orderId) {
       return res.status(400).json({
         success: false,
-        message: "MerchantTin is required to delete a bill.",
+        message: "orderId is required",
         data: null,
       });
     }
 
-    const result = await posapi.DELETE_BILL(order);
-    if (!result) throw new Error("Result was null");
+    if (!payload.merchantTin) {
+      return res.status(400).json({
+        success: false,
+        message: "merchantTin is required",
+        data: null,
+      });
+    }
+
+    const result = await posapi.DELETE_BILL(payload);
     return res.json(result);
   } catch (err: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: err.message,
+      message: err?.message ?? "Failed to delete bill",
       data: null,
     });
   }
 });
 
-// SEND
+// ========== SEND BILLS ==========
 app.post("/posapi/sendBills", async (_req, res) => {
-  const result = await posapi.SEND_BILLS();
-  res.json(result);
+  try {
+    const result = await posapi.SEND_BILLS();
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to send bills",
+      data: null,
+    });
+  }
+});
+
+// ========== GET RECEIPT BY ORDER ID ==========
+app.get("/posapi/receipt/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const merchantTin = req.query.merchantTin as string | undefined;
+
+    let receipt = null;
+    if (merchantTin) {
+      receipt = await findReceiptByOrderId(orderId, merchantTin);
+    } else {
+      receipt = await findReceiptByOrderIdOnly(orderId);
+    }
+
+    if (!receipt) {
+      return res.status(404).json({
+        success: false,
+        message: "Receipt not found",
+        data: null,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Receipt found",
+      data: receipt,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to get receipt",
+      data: null,
+    });
+  }
 });
 
 // routers
@@ -297,6 +235,6 @@ app.use((_req, res) => res.status(404).json({ error: "Not Found" }));
 
 const PORT = Number(process.env.PORT) || 4001;
 app.listen(PORT, () => {
-  console.log(`🚀 POS Wrapper API running → http://localhost:${PORT}`);
-  console.log(`➡️  Base endpoint: http://localhost:${PORT}/posapi`);
+  console.log(`POS Wrapper API running -> http://localhost:${PORT}`);
+  console.log(`Base endpoint: http://localhost:${PORT}/posapi`);
 });

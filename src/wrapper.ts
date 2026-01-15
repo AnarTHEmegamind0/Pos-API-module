@@ -1,144 +1,128 @@
 // src/wrapper.ts
 import * as Client from "./client.js";
-import { convertToPosApiReceipt } from "./collect.js";
-import type { CReceipt, CSettings, Result } from "./types.js";
-import type { PosApiLog } from "./log-types.js";
-import { EReceiptType } from "./enums.js";
-import { getPosApiSettingsByTin, getPosApiSettings } from "./db.js";
+import type {
+  DirectBillRequest,
+  DirectBillResponse,
+  DeleteBillRequest,
+  Result,
+} from "./types.js";
+import {
+  saveReceipt,
+  findReceiptByOrderId,
+  findReceiptByOrderIdOnly,
+  type ReceiptRecord,
+} from "./db.js";
 
 export interface PosApiDependencies {
-  // add merchantTin here
-  writeLogOrderData: (
-    apiResult: any,
-    orderId: string,
-    merchantTin: string,
-  ) => void;
-  writeLogReturnBill: (
-    oldLog: PosApiLog,
-    orderId: string,
-    resultMessage: string,
-  ) => void;
-  // <--- change signature: we need merchantTin too
-  findPosApiLogByOrderId: (
-    orderId: string,
-    merchantTin: string,
-  ) => Promise<PosApiLog | null>;
   notifyError?: (msg: string) => void;
+  notifySuccess?: (msg: string) => void;
 }
 
 export class PosApiWrapper {
-  private talonNos = new Map<string, string>();
+  constructor(private deps: PosApiDependencies = {}) {}
 
-  constructor(private deps: PosApiDependencies) {}
+  /**
+   * POST_BILL - Frontend-ээс бэлэн JSON авч ST-Ebarimt руу явуулах
+   */
+  async POST_BILL(
+    request: DirectBillRequest,
+  ): Promise<Result<DirectBillResponse & { orderId: string }>> {
+    const { orderId, ...payload } = request;
 
-  private async resolveSettings(order: CReceipt): Promise<CSettings> {
-    const merchantTin = order.MerchantTin ?? null;
+    if (!orderId) {
+      const msg = "orderId is required";
+      this.deps.notifyError?.(`POS API error: ${msg}`);
+      return { success: false, message: msg, data: null };
+    }
 
-    if (merchantTin) {
-      const row = await getPosApiSettingsByTin(merchantTin);
-      if (!row) {
-        throw new Error(`No POS settings found for merchantTin=${merchantTin}`);
-      }
+    console.log(
+      "[addBill] Request:",
+      JSON.stringify({ orderId, ...payload }, null, 2),
+    );
+
+    // ST-Ebarimt руу явуулах
+    const result = await Client.postData(JSON.stringify(payload));
+
+    // DB-д хадгалах
+    await saveReceipt({
+      orderId,
+      merchantTin: payload.merchantTin,
+      request: payload,
+      response: result.data as DirectBillResponse | null,
+      success: result.success,
+      errorMessage: result.success ? null : result.message,
+    });
+
+    if (result.success && result.data) {
+      console.log(
+        `[addBill] Success - OrderId: ${orderId}, EbarimtId: ${result.data.id}`,
+      );
+      this.deps.notifySuccess?.(`Bill created: ${orderId}`);
+
+      // Response-д orderId нэмж буцаах
       return {
-        MerchantTin: row.merchantTin,
-        PosNo: row.posNo,
-        DistrictCode: row.districtCode,
-        BranchNo: row.branchNo,
-        BillIdSuffix: row.billIdSuffix,
+        success: true,
+        message: result.message,
+        data: { ...result.data, orderId },
+      };
+    } else {
+      console.error(
+        `[addBill] Error - OrderId: ${orderId}, Message: ${result.message}`,
+      );
+      this.deps.notifyError?.(`POS API error: ${result.message}`);
+      return {
+        success: false,
+        message: result.message,
+        data: null,
       };
     }
-
-    const row = await getPosApiSettings();
-    if (!row) {
-      throw new Error("No POS settings found in database");
-    }
-
-    return {
-      MerchantTin: row.merchantTin,
-      PosNo: row.posNo,
-      DistrictCode: row.districtCode,
-      BranchNo: row.branchNo,
-      BillIdSuffix: row.billIdSuffix,
-    };
   }
 
-  async POST_BILL(order: CReceipt): Promise<Result<any>> {
-    if (!this.talonNos.has(order.OrderId)) this.talonNos.set(order.OrderId, "");
-    const settings = await this.resolveSettings(order);
-    const payload = convertToPosApiReceipt(order, settings);
+  /**
+   * DELETE_BILL - Баримт буцаах/устгах
+   */
+  async DELETE_BILL(request: DeleteBillRequest): Promise<Result<string>> {
+    const { orderId, merchantTin } = request;
 
-    const result = await Client.postData(payload);
-    if (result?.success) {
-      this.deps.writeLogOrderData(
-        result.data,
-        order.OrderId,
-        settings.MerchantTin,
-      );
-    } else {
-      this.deps.notifyError?.(
-        `POS API error: ${result?.message ?? "Unknown error"}`,
-      );
-    }
-    return result;
-  }
-
-  async POST_BILL_TYPE(
-    order: CReceipt,
-    typeOverride: EReceiptType,
-  ): Promise<Result<any>> {
-    if (!this.talonNos.has(order.OrderId)) this.talonNos.set(order.OrderId, "");
-    const settings = await this.resolveSettings(order);
-    const payload = convertToPosApiReceipt(order, settings, typeOverride);
-
-    const result = await Client.postData(payload);
-    if (result?.success) {
-      this.deps.writeLogOrderData(
-        result.data,
-        order.OrderId,
-        settings.MerchantTin,
-      );
-    } else {
-      this.deps.notifyError?.(
-        `POS API error: ${result?.message ?? "Unknown error"}`,
-      );
-    }
-    return result;
-  }
-
-  async DELETE_BILL(order: CReceipt): Promise<Result<string>> {
-    // we MUST know which merchantTin we’re deleting for
-    const merchantTin = order.MerchantTin ?? "";
-    const oldLog = await this.deps.findPosApiLogByOrderId(
-      order.OrderId,
-      merchantTin,
-    );
-    if (!oldLog) {
-      const msg = `No existing bill for provided OrderId: ${order.OrderId} (merchantTin=${merchantTin})`;
+    if (!orderId || !merchantTin) {
+      const msg = "orderId and merchantTin are required";
       this.deps.notifyError?.(`POS API error: ${msg}`);
       return { success: false, message: msg, data: null };
     }
 
-    const deleteFn:
-      | ((id: string, date: string) => Promise<Result<string>>)
-      | undefined = (Client as any).deleteData ?? (Client as any).deleteBill;
+    // DB-ээс хуучин баримт хайх
+    let receipt: ReceiptRecord | null = null;
+    if (merchantTin) {
+      receipt = await findReceiptByOrderId(orderId, merchantTin);
+    } else {
+      receipt = await findReceiptByOrderIdOnly(orderId);
+    }
 
-    if (!deleteFn) {
-      const msg = "deleteData/deleteBill is not exported from client";
+    if (!receipt || !receipt.ebarimtId) {
+      const msg = `No existing bill found for OrderId: ${orderId} (merchantTin=${merchantTin})`;
       this.deps.notifyError?.(`POS API error: ${msg}`);
       return { success: false, message: msg, data: null };
     }
 
-    const dateStr = toPosDateTime(oldLog.date);
-    const result = await deleteFn(oldLog.id, dateStr);
+    // Date format for delete
+    const dateStr = receipt.responseJson?.date ?? new Date().toISOString();
+
+    const result = await Client.deleteData(receipt.ebarimtId, dateStr);
 
     if (result.success) {
-      this.deps.writeLogReturnBill(oldLog, order.OrderId, result.message);
+      console.log(
+        `[deleteBill] Success - OrderId: ${orderId}, EbarimtId: ${receipt.ebarimtId}`,
+      );
     } else {
       this.deps.notifyError?.(`POS API error: ${result.message}`);
     }
+
     return result;
   }
 
+  /**
+   * SEND_BILLS - Бүх pending баримтуудыг илгээх
+   */
   async SEND_BILLS(): Promise<Result<string>> {
     const result = await Client.sendData();
     if (!result.success) {
@@ -147,30 +131,9 @@ export class PosApiWrapper {
     return result;
   }
 
+  // Info functions
   GetInfo = Client.getInfo;
   GetTTDInfo = Client.getTTD;
   GetTinInfo = Client.getTin;
   GetCombinedTinInfo = Client.getCombinedTinInfo;
-}
-
-function toPosDateTime(d: Date | string | number): string {
-  const date =
-    d instanceof Date
-      ? d
-      : typeof d === "string" || typeof d === "number"
-        ? new Date(d)
-        : new Date(NaN);
-
-  if (Number.isNaN(date.getTime())) {
-    const now = new Date();
-    return fmt(now);
-  }
-  return fmt(date);
-
-  function fmt(x: Date) {
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())} ${pad(
-      x.getHours(),
-    )}:${pad(x.getMinutes())}:${pad(x.getSeconds())}`;
-  }
 }

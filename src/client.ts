@@ -17,12 +17,17 @@ export async function postData(postData: string) {
     `${POS_API_BASE_URL}/rest/receipt`,
     "POST",
     JSON.parse(postData),
-    (s) => JSON.parse(s),
+    (s: string) => JSON.parse(s),
   );
 }
 
 export async function sendData() {
-  return executeHttpRequest<string>(`${POS_API_BASE_URL}/rest/sendData`, "GET");
+  return executeHttpRequest<string>(
+    `${POS_API_BASE_URL}/rest/sendData`,
+    "GET",
+    undefined,
+    (s: string) => s,
+  );
 }
 
 export async function deleteData(id: string, date: string) {
@@ -30,6 +35,7 @@ export async function deleteData(id: string, date: string) {
     `${POS_API_BASE_URL}/rest/receipt`,
     "DELETE",
     { id, date },
+    (s: string) => s,
   );
 }
 

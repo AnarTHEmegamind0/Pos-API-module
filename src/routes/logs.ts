@@ -42,7 +42,7 @@ logsRouter.get("/logs", async (req, res) => {
 
     // list all
     const result = await pool.query(
-      `SELECT order_id, id, date, success, message, error_code, created_at, updated_at
+      `SELECT *
          FROM pos_api_logs
         ORDER BY date DESC
         LIMIT $1 OFFSET $2`,

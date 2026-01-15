@@ -1,0 +1,345 @@
+{
+  "info": {
+    "name": "POS API Module",
+    "_postman_id": "pos-api-module-collection",
+    "description": "ST-Ebarimt API-тай холбогдох модуль. Frontend-ээс бэлэн тооцоолсон JSON хүлээн авч баримт үүсгэнэ.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4001",
+      "type": "string"
+    },
+    {
+      "key": "merchantTin",
+      "value": "37900846788",
+      "type": "string"
+    },
+    {
+      "key": "districtCode",
+      "value": "3402",
+      "type": "string"
+    },
+    {
+      "key": "branchNo",
+      "value": "001",
+      "type": "string"
+    },
+    {
+      "key": "posNo",
+      "value": "10012188",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bills",
+      "item": [
+        {
+          "name": "Add Bill - B2C Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORDER-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"totalAmount\": 1000,\n  \"totalVAT\": 89.29,\n  \"totalCityTax\": 17.86,\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"totalAmount\": 1000,\n      \"totalVAT\": 89.29,\n      \"totalCityTax\": 17.86,\n      \"items\": [\n        {\n          \"name\": \"Туршилтын бараа\",\n          \"barCode\": \"8901234567890\",\n          \"barCodeType\": \"GS1\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"unitPrice\": 1000,\n          \"totalAmount\": 1000,\n          \"totalVAT\": 89.29,\n          \"totalCityTax\": 17.86\n        }\n      ]\n    }\n  ],\n  \"payments\": [\n    {\n      \"code\": \"CASH\",\n      \"status\": \"PAID\",\n      \"paidAmount\": 1000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Bill - B2B Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORDER-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"totalAmount\": 5000,\n  \"totalVAT\": 446.43,\n  \"totalCityTax\": 89.29,\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"12345678\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"12345678\",\n      \"totalAmount\": 5000,\n      \"totalVAT\": 446.43,\n      \"totalCityTax\": 89.29,\n      \"items\": [\n        {\n          \"name\": \"Байгууллагын бараа\",\n          \"barCode\": \"8901234567891\",\n          \"barCodeType\": \"GS1\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"unitPrice\": 5000,\n          \"totalAmount\": 5000,\n          \"totalVAT\": 446.43,\n          \"totalCityTax\": 89.29\n        }\n      ]\n    }\n  ],\n  \"payments\": [\n    {\n      \"code\": \"PAYMENT_CARD\",\n      \"status\": \"PAID\",\n      \"paidAmount\": 5000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Bill - B2C Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"INV-{{$timestamp}}\",\n  \"type\": \"B2C_INVOICE\",\n  \"totalAmount\": 10000,\n  \"totalVAT\": 892.86,\n  \"totalCityTax\": 178.57,\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"totalAmount\": 10000,\n      \"totalVAT\": 892.86,\n      \"totalCityTax\": 178.57,\n      \"items\": [\n        {\n          \"name\": \"Нэхэмжлэхийн бараа\",\n          \"barCode\": \"8901234567892\",\n          \"barCodeType\": \"GS1\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 2,\n          \"unitPrice\": 5000,\n          \"totalAmount\": 10000,\n          \"totalVAT\": 892.86,\n          \"totalCityTax\": 178.57\n        }\n      ]\n    }\n  ],\n  \"payments\": [\n    {\n      \"code\": \"CASH\",\n      \"status\": \"PAID\",\n      \"paidAmount\": 10000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Bill - B2B Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"INV-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"totalAmount\": 50000,\n  \"totalVAT\": 4464.29,\n  \"totalCityTax\": 892.86,\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"12345678\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"12345678\",\n      \"totalAmount\": 50000,\n      \"totalVAT\": 4464.29,\n      \"totalCityTax\": 892.86,\n      \"items\": [\n        {\n          \"name\": \"Байгууллагын нэхэмжлэх\",\n          \"barCode\": \"8901234567893\",\n          \"barCodeType\": \"GS1\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 10,\n          \"unitPrice\": 5000,\n          \"totalAmount\": 50000,\n          \"totalVAT\": 4464.29,\n          \"totalCityTax\": 892.86\n        }\n      ]\n    }\n  ],\n  \"payments\": [\n    {\n      \"code\": \"PAYMENT_CARD\",\n      \"status\": \"PAID\",\n      \"paidAmount\": 50000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORDER-123\",\n  \"type\": \"B2C_RECEIPT\",\n  \"totalAmount\": 2000,\n  \"totalVAT\": 178.57,\n  \"totalCityTax\": 35.71,\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"totalAmount\": 2000,\n      \"totalVAT\": 178.57,\n      \"totalCityTax\": 35.71,\n      \"items\": [\n        {\n          \"name\": \"Засварласан бараа\",\n          \"barCode\": \"8901234567890\",\n          \"barCodeType\": \"GS1\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 2,\n          \"unitPrice\": 1000,\n          \"totalAmount\": 2000,\n          \"totalVAT\": 178.57,\n          \"totalCityTax\": 35.71\n        }\n      ]\n    }\n  ],\n  \"payments\": [\n    {\n      \"code\": \"CASH\",\n      \"status\": \"PAID\",\n      \"paidAmount\": 2000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/updateBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "updateBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORDER-123\",\n  \"merchantTin\": \"{{merchantTin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/deleteBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "deleteBill"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Receipt by OrderId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/receipt/ORDER-123?merchantTin={{merchantTin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "receipt", "ORDER-123"],
+              "query": [
+                {
+                  "key": "merchantTin",
+                  "value": "{{merchantTin}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bills",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/sendBills",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "sendBills"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get All Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Settings by MerchantTin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings/{{merchantTin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings", "{{merchantTin}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create/Update Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"billIdSuffix\": \"01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Settings",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings/{{merchantTin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings", "{{merchantTin}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ebarimt Info",
+      "item": [
+        {
+          "name": "Get POS Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "info"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get TIN Info by RegNo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/tin/5765465",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "tin", "5765465"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Get Order Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/logs?orderId=ORDER-123",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "logs"],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "ORDER-123"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

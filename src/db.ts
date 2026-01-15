@@ -1,6 +1,7 @@
 // src/db.ts
 import pg from "pg";
 import { PosApiLog, PosApiSettings, PosApiUpdateLog } from "./log-types.js";
+import type { DirectBillRequest, DirectBillResponse } from "./types.js";
 
 const { Pool } = pg;
 
@@ -92,6 +93,44 @@ export async function initDb(): Promise<void> {
   );
   await p.query(
     `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_new_id ON pos_api_update_logs(new_id);`,
+  );
+
+  // Receipts table - бүрэн JSON хадгалах
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS pos_api_receipts (
+      id             SERIAL PRIMARY KEY,
+      order_id       TEXT NOT NULL,
+      merchant_tin   TEXT NOT NULL,
+      
+      request_json   JSONB NOT NULL,
+      response_json  JSONB,
+      ebarimt_id     TEXT,
+      lottery        TEXT,
+      qr_data        TEXT,
+      
+      total_amount   DECIMAL(18,2),
+      total_vat      DECIMAL(18,2),
+      total_city_tax DECIMAL(18,2),
+      receipt_type   TEXT,
+      
+      success        BOOLEAN NOT NULL DEFAULT false,
+      error_message  TEXT,
+      
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      
+      UNIQUE(order_id, merchant_tin)
+    );
+  `);
+
+  await p.query(
+    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_order_id ON pos_api_receipts(order_id);`,
+  );
+  await p.query(
+    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_merchant_tin ON pos_api_receipts(merchant_tin);`,
+  );
+  await p.query(
+    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_ebarimt_id ON pos_api_receipts(ebarimt_id);`,
   );
 }
 
@@ -359,4 +398,178 @@ export async function closeDb(): Promise<void> {
     await pool.end();
     pool = null;
   }
+}
+
+// ========== Receipt Functions ==========
+
+export interface SaveReceiptInput {
+  orderId: string;
+  merchantTin: string;
+  request: Omit<DirectBillRequest, "orderId">;
+  response: DirectBillResponse | null;
+  success: boolean;
+  errorMessage?: string | null;
+}
+
+export interface ReceiptRecord {
+  id: number;
+  orderId: string;
+  merchantTin: string;
+  requestJson: DirectBillRequest;
+  responseJson: DirectBillResponse | null;
+  ebarimtId: string | null;
+  lottery: string | null;
+  qrData: string | null;
+  totalAmount: number;
+  totalVat: number;
+  totalCityTax: number;
+  receiptType: string;
+  success: boolean;
+  errorMessage: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Receipt хадгалах (upsert)
+ */
+export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
+  const p = getPool();
+
+  const ebarimtId = input.response?.id ?? null;
+  const lottery = input.response?.lottery ?? null;
+  const qrData = input.response?.qrData ?? null;
+  const totalAmount = input.request.totalAmount ?? 0;
+  const totalVat = input.request.totalVAT ?? 0;
+  const totalCityTax = input.request.totalCityTax ?? 0;
+  const receiptType = input.request.type ?? "";
+
+  await p.query(
+    `
+    INSERT INTO pos_api_receipts (
+      order_id, merchant_tin, request_json, response_json,
+      ebarimt_id, lottery, qr_data,
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    ON CONFLICT(order_id, merchant_tin) DO UPDATE SET
+      request_json   = EXCLUDED.request_json,
+      response_json  = EXCLUDED.response_json,
+      ebarimt_id     = EXCLUDED.ebarimt_id,
+      lottery        = EXCLUDED.lottery,
+      qr_data        = EXCLUDED.qr_data,
+      total_amount   = EXCLUDED.total_amount,
+      total_vat      = EXCLUDED.total_vat,
+      total_city_tax = EXCLUDED.total_city_tax,
+      receipt_type   = EXCLUDED.receipt_type,
+      success        = EXCLUDED.success,
+      error_message  = EXCLUDED.error_message,
+      updated_at     = NOW()
+    `,
+    [
+      input.orderId,
+      input.merchantTin,
+      JSON.stringify(input.request),
+      input.response ? JSON.stringify(input.response) : null,
+      ebarimtId,
+      lottery,
+      qrData,
+      totalAmount,
+      totalVat,
+      totalCityTax,
+      receiptType,
+      input.success,
+      input.errorMessage ?? null,
+    ],
+  );
+}
+
+/**
+ * Receipt хайх (orderId + merchantTin)
+ */
+export async function findReceiptByOrderId(
+  orderId: string,
+  merchantTin: string,
+): Promise<ReceiptRecord | null> {
+  const p = getPool();
+  const result = await p.query(
+    `
+    SELECT 
+      id, order_id, merchant_tin, request_json, response_json,
+      ebarimt_id, lottery, qr_data,
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message, created_at, updated_at
+    FROM pos_api_receipts
+    WHERE order_id = $1 AND merchant_tin = $2
+    `,
+    [orderId, merchantTin],
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    merchantTin: row.merchant_tin,
+    requestJson: row.request_json,
+    responseJson: row.response_json,
+    ebarimtId: row.ebarimt_id,
+    lottery: row.lottery,
+    qrData: row.qr_data,
+    totalAmount: parseFloat(row.total_amount),
+    totalVat: parseFloat(row.total_vat),
+    totalCityTax: parseFloat(row.total_city_tax),
+    receiptType: row.receipt_type,
+    success: row.success,
+    errorMessage: row.error_message,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Receipt хайх (orderId only - fallback)
+ */
+export async function findReceiptByOrderIdOnly(
+  orderId: string,
+): Promise<ReceiptRecord | null> {
+  const p = getPool();
+  const result = await p.query(
+    `
+    SELECT 
+      id, order_id, merchant_tin, request_json, response_json,
+      ebarimt_id, lottery, qr_data,
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message, created_at, updated_at
+    FROM pos_api_receipts
+    WHERE order_id = $1
+    ORDER BY updated_at DESC
+    LIMIT 1
+    `,
+    [orderId],
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    merchantTin: row.merchant_tin,
+    requestJson: row.request_json,
+    responseJson: row.response_json,
+    ebarimtId: row.ebarimt_id,
+    lottery: row.lottery,
+    qrData: row.qr_data,
+    totalAmount: parseFloat(row.total_amount),
+    totalVat: parseFloat(row.total_vat),
+    totalCityTax: parseFloat(row.total_city_tax),
+    receiptType: row.receipt_type,
+    success: row.success,
+    errorMessage: row.error_message,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
