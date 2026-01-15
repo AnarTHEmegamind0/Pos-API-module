@@ -1,6 +1,6 @@
 // src/routes/logs.ts
 import { Router } from "express";
-import { getPool, findLogByOrderId, findUpdatesByOrderId } from "../db";
+import { getPool, findLogByOrderId, findUpdatesByOrderId } from "../db.js";
 
 export const logsRouter = Router();
 
@@ -46,10 +46,10 @@ logsRouter.get("/logs", async (req, res) => {
          FROM pos_api_logs
         ORDER BY date DESC
         LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      [limit, offset],
     );
     const countResult = await pool.query(
-      `SELECT COUNT(*) as count FROM pos_api_logs`
+      `SELECT COUNT(*) as count FROM pos_api_logs`,
     );
     const count = parseInt(countResult.rows[0].count, 10);
 
@@ -83,11 +83,11 @@ logsRouter.get("/returns", async (req, res) => {
           WHERE order_id = $1
           ORDER BY return_date DESC
           LIMIT $2 OFFSET $3`,
-        [orderId, limit, offset]
+        [orderId, limit, offset],
       );
       const countResult = await pool.query(
         `SELECT COUNT(*) as count FROM pos_api_return_logs WHERE order_id = $1`,
-        [orderId]
+        [orderId],
       );
       const count = parseInt(countResult.rows[0].count, 10);
       return res.json({
@@ -110,10 +110,10 @@ logsRouter.get("/returns", async (req, res) => {
          FROM pos_api_return_logs
         ORDER BY return_date DESC
         LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      [limit, offset],
     );
     const countResult = await pool.query(
-      `SELECT COUNT(*) as count FROM pos_api_return_logs`
+      `SELECT COUNT(*) as count FROM pos_api_return_logs`,
     );
     const count = parseInt(countResult.rows[0].count, 10);
 
@@ -162,10 +162,10 @@ logsRouter.get("/updates", async (req, res) => {
          FROM pos_api_update_logs
      ORDER BY date DESC, created_at DESC
         LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      [limit, offset],
     );
     const countResult = await pool.query(
-      `SELECT COUNT(*) as count FROM pos_api_update_logs`
+      `SELECT COUNT(*) as count FROM pos_api_update_logs`,
     );
     const count = parseInt(countResult.rows[0].count, 10);
 

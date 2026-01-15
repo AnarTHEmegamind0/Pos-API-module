@@ -4,7 +4,7 @@ import {
   getPosApiSettings,
   upsertPosApiSettings,
   deletePosApiSettings,
-} from "../db";
+} from "../db.js";
 
 export const settingsRouter = Router();
 

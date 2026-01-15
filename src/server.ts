@@ -3,24 +3,24 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
-import { PosApiWrapper } from "./wrapper";
-import type { CReceipt } from "./types";
-import type { PosApiLog as DomainPosApiLog } from "./log-types";
+import { PosApiWrapper } from "./wrapper.js";
+import type { CReceipt } from "./types.js";
+import type { PosApiLog as DomainPosApiLog } from "./log-types.js";
 
 // DB helpers
 import {
   initDb,
   saveOrderLog,
   saveReturnBillLog,
-  findLogByOrderIdAndTin, // <--- use new one
+  findLogByOrderIdAndTin,
   findLogByOrderId, // fallback
   saveUpdateBillLog,
-} from "./db";
+} from "./db.js";
 
-import { logsRouter } from "./routes/logs";
-import { settingsRouter } from "./routes/settings";
-import { ebarimtInfoRouter } from "./routes/ebarimt-info";
-import { EReceiptType } from "./enums";
+import { logsRouter } from "./routes/logs.js";
+import { settingsRouter } from "./routes/settings.js";
+import { ebarimtInfoRouter } from "./routes/ebarimt-info.js";
+import { EReceiptType } from "./enums.js";
 
 (async () => {
   await initDb();

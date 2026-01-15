@@ -1,6 +1,6 @@
 // src/db.ts
 import pg from "pg";
-import { PosApiLog, PosApiSettings, PosApiUpdateLog } from "./log-types";
+import { PosApiLog, PosApiSettings, PosApiUpdateLog } from "./log-types.js";
 
 const { Pool } = pg;
 
@@ -79,19 +79,19 @@ export async function initDb(): Promise<void> {
 
   // Create indexes if not exists
   await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_logs_order_id ON pos_api_logs(order_id);`
+    `CREATE INDEX IF NOT EXISTS idx_pos_logs_order_id ON pos_api_logs(order_id);`,
   );
   await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_retlogs_order_id ON pos_api_return_logs(order_id);`
+    `CREATE INDEX IF NOT EXISTS idx_pos_retlogs_order_id ON pos_api_return_logs(order_id);`,
   );
   await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_order_id ON pos_api_update_logs(order_id);`
+    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_order_id ON pos_api_update_logs(order_id);`,
   );
   await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_old_id ON pos_api_update_logs(old_id);`
+    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_old_id ON pos_api_update_logs(old_id);`,
   );
   await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_new_id ON pos_api_update_logs(new_id);`
+    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_new_id ON pos_api_update_logs(new_id);`,
   );
 }
 
@@ -101,7 +101,7 @@ export async function initDb(): Promise<void> {
 export async function saveOrderLog(
   apiResult: any,
   orderId: string,
-  merchantTin: string
+  merchantTin: string,
 ): Promise<void> {
   const id: string = apiResult?.id ?? "";
   const rawDate: string | number | Date = apiResult?.date ?? new Date();
@@ -125,14 +125,14 @@ export async function saveOrderLog(
       error_code  = EXCLUDED.error_code,
       updated_at  = NOW()
     `,
-    [orderId, id, dateIso, merchantTin ?? "", success, message, errorCode]
+    [orderId, id, dateIso, merchantTin ?? "", success, message, errorCode],
   );
 }
 
 /** Find order log by orderId + merchantTin (preferred) */
 export async function findLogByOrderIdAndTin(
   orderId: string,
-  merchantTin: string
+  merchantTin: string,
 ): Promise<PosApiLog | null> {
   const p = getPool();
   const result = await p.query(
@@ -141,7 +141,7 @@ export async function findLogByOrderIdAndTin(
      FROM pos_api_logs
      WHERE order_id = $1 AND merchant_tin = $2
     `,
-    [orderId, merchantTin ?? ""]
+    [orderId, merchantTin ?? ""],
   );
   const row = result.rows[0];
   if (!row) return null;
@@ -163,7 +163,7 @@ export async function findLogByOrderIdAndTin(
  * we'll just take the latest by updated_at.
  */
 export async function findLogByOrderId(
-  orderId: string
+  orderId: string,
 ): Promise<PosApiLog | null> {
   const p = getPool();
   const result = await p.query(
@@ -174,7 +174,7 @@ export async function findLogByOrderId(
      ORDER BY updated_at DESC
      LIMIT 1
     `,
-    [orderId]
+    [orderId],
   );
   const row = result.rows[0];
   if (!row) return null;
@@ -200,7 +200,7 @@ export async function saveReturnBillLog(
     errorCode?: string | null;
     success?: boolean;
     returnDate?: Date | string | number;
-  }
+  },
 ): Promise<void> {
   const p = getPool();
   const success = opts?.success ?? true;
@@ -220,7 +220,7 @@ export async function saveReturnBillLog(
       success,
       resultMessage,
       errorCode,
-    ]
+    ],
   );
 }
 
@@ -240,12 +240,12 @@ export async function saveUpdateBillLog(input: {
     VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT DO NOTHING
     `,
-    [input.orderId, input.oldId, input.newId, dateIso, input.merchantTin ?? ""]
+    [input.orderId, input.oldId, input.newId, dateIso, input.merchantTin ?? ""],
   );
 }
 
 export async function findUpdatesByOrderId(
-  orderId: string
+  orderId: string,
 ): Promise<PosApiUpdateLog[]> {
   const p = getPool();
   const result = await p.query(
@@ -255,7 +255,7 @@ export async function findUpdatesByOrderId(
     WHERE order_id = $1
     ORDER BY date DESC, created_at DESC
     `,
-    [orderId]
+    [orderId],
   );
 
   return result.rows.map((r: any) => ({
@@ -283,7 +283,7 @@ export async function getPosApiSettings(): Promise<PosApiSettings | null> {
   const p = getPool();
   const result = await p.query(
     `SELECT merchant_tin, pos_no, district_code, branch_no, bill_id_suffix, updated_at
-     FROM pos_api_settings ORDER BY updated_at DESC LIMIT 1`
+     FROM pos_api_settings ORDER BY updated_at DESC LIMIT 1`,
   );
   const row = result.rows[0];
   if (!row) return null;
@@ -298,7 +298,7 @@ export async function getPosApiSettings(): Promise<PosApiSettings | null> {
 }
 
 export async function getPosApiSettingsByTin(
-  merchantTin: string
+  merchantTin: string,
 ): Promise<PosApiSettings | null> {
   const p = getPool();
   const result = await p.query(
@@ -307,7 +307,7 @@ export async function getPosApiSettingsByTin(
     FROM pos_api_settings
     WHERE merchant_tin = $1
     `,
-    [merchantTin]
+    [merchantTin],
   );
   const row = result.rows[0];
   if (!row) return null;
@@ -322,7 +322,7 @@ export async function getPosApiSettingsByTin(
 }
 
 export async function upsertPosApiSettings(
-  input: PosApiSettings
+  input: PosApiSettings,
 ): Promise<void> {
   const p = getPool();
   await p.query(
@@ -342,7 +342,7 @@ export async function upsertPosApiSettings(
       input.districtCode,
       input.branchNo,
       input.billIdSuffix,
-    ]
+    ],
   );
 }
 

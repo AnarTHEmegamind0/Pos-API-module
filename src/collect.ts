@@ -1,4 +1,4 @@
-import { EVAT, EReceiptType } from "./enums";
+import { EVAT, EReceiptType } from "./enums.js";
 
 import type {
   CReceipt,
@@ -7,7 +7,7 @@ import type {
   Receipt,
   Item,
   Payment,
-} from "./types";
+} from "./types.js";
 
 // ---------- helpers ----------
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -23,7 +23,7 @@ const totalVATOfItem = (it: Item) =>
 function rollupItemTotals(it: Item) {
   const subtotal = round2(it.unitPrice * it.qty);
   const vat = totalVATOfItem(it);
-  const nhat = isNHAT(it) ? round2(priceWithoutTax(it) * it.qty * 0.01) : 0;
+  const nhat = isNHAT(it) ? round2(priceWithoutTax(it) * it.qty * 0.02) : 0;
   const city = 0; // set if your jurisdiction requires
   const total = round2(subtotal + nhat);
   return { subtotal, vat, nhat, city, total };
@@ -35,7 +35,7 @@ function rollupItemTotals(it: Item) {
 export function convertToPosApiReceipt(
   ireceipt: CReceipt,
   settings: CSettings,
-  typeOverride?: EReceiptType | null
+  typeOverride?: EReceiptType | null,
 ): string {
   // decide final type first
   const finalType =
@@ -97,11 +97,11 @@ export function convertToPosApiReceipt(
     }
 
     const recTotal = round2(
-      items.reduce((s, it) => s + (it.totalAmount ?? 0), 0)
+      items.reduce((s, it) => s + (it.totalAmount ?? 0), 0),
     );
     const recVAT = round2(items.reduce((s, it) => s + (it.totalVAT ?? 0), 0));
     const recCity = round2(
-      items.reduce((s, it) => s + (it.totalCityTax ?? 0), 0)
+      items.reduce((s, it) => s + (it.totalCityTax ?? 0), 0),
     );
 
     const rec: Receipt = {
@@ -121,13 +121,13 @@ export function convertToPosApiReceipt(
 
   // ---- top-level totals ----
   const grandTotal = round2(
-    pos.receipts.reduce((s, r) => s + (r.totalAmount ?? 0), 0)
+    pos.receipts.reduce((s, r) => s + (r.totalAmount ?? 0), 0),
   );
   const grandVAT = round2(
-    pos.receipts.reduce((s, r) => s + (r.totalVAT ?? 0), 0)
+    pos.receipts.reduce((s, r) => s + (r.totalVAT ?? 0), 0),
   );
   const grandCity = round2(
-    pos.receipts.reduce((s, r) => s + (r.totalCityTax ?? 0), 0)
+    pos.receipts.reduce((s, r) => s + (r.totalCityTax ?? 0), 0),
   );
 
   pos.totalAmount = grandTotal;
@@ -168,7 +168,7 @@ export function convertToPosApiReceipt(
           code: p.IsCash ? "CASH" : "PAYMENT_CARD",
           status: "PAID",
           paidAmount: p.Amount ?? 0,
-        }))
+        })),
       );
     }
   } else {

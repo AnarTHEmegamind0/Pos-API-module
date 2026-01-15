@@ -1,4 +1,4 @@
-import { EReceiptType, EVAT } from "./enums";
+import { EReceiptType, EVAT } from "./enums.js";
 
 export type Result<T> = {
   message: string;

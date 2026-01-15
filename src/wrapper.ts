@@ -1,27 +1,27 @@
 // src/wrapper.ts
-import * as Client from "./client";
-import { convertToPosApiReceipt } from "./collect";
-import type { CReceipt, CSettings, Result } from "./types";
-import type { PosApiLog } from "./log-types";
-import { EReceiptType } from "./enums";
-import { getPosApiSettingsByTin, getPosApiSettings } from "./db";
+import * as Client from "./client.js";
+import { convertToPosApiReceipt } from "./collect.js";
+import type { CReceipt, CSettings, Result } from "./types.js";
+import type { PosApiLog } from "./log-types.js";
+import { EReceiptType } from "./enums.js";
+import { getPosApiSettingsByTin, getPosApiSettings } from "./db.js";
 
 export interface PosApiDependencies {
   // add merchantTin here
   writeLogOrderData: (
     apiResult: any,
     orderId: string,
-    merchantTin: string
+    merchantTin: string,
   ) => void;
   writeLogReturnBill: (
     oldLog: PosApiLog,
     orderId: string,
-    resultMessage: string
+    resultMessage: string,
   ) => void;
   // <--- change signature: we need merchantTin too
   findPosApiLogByOrderId: (
     orderId: string,
-    merchantTin: string
+    merchantTin: string,
   ) => Promise<PosApiLog | null>;
   notifyError?: (msg: string) => void;
 }
@@ -72,11 +72,11 @@ export class PosApiWrapper {
       this.deps.writeLogOrderData(
         result.data,
         order.OrderId,
-        settings.MerchantTin
+        settings.MerchantTin,
       );
     } else {
       this.deps.notifyError?.(
-        `POS API error: ${result?.message ?? "Unknown error"}`
+        `POS API error: ${result?.message ?? "Unknown error"}`,
       );
     }
     return result;
@@ -84,7 +84,7 @@ export class PosApiWrapper {
 
   async POST_BILL_TYPE(
     order: CReceipt,
-    typeOverride: EReceiptType
+    typeOverride: EReceiptType,
   ): Promise<Result<any>> {
     if (!this.talonNos.has(order.OrderId)) this.talonNos.set(order.OrderId, "");
     const settings = await this.resolveSettings(order);
@@ -95,11 +95,11 @@ export class PosApiWrapper {
       this.deps.writeLogOrderData(
         result.data,
         order.OrderId,
-        settings.MerchantTin
+        settings.MerchantTin,
       );
     } else {
       this.deps.notifyError?.(
-        `POS API error: ${result?.message ?? "Unknown error"}`
+        `POS API error: ${result?.message ?? "Unknown error"}`,
       );
     }
     return result;
@@ -110,7 +110,7 @@ export class PosApiWrapper {
     const merchantTin = order.MerchantTin ?? "";
     const oldLog = await this.deps.findPosApiLogByOrderId(
       order.OrderId,
-      merchantTin
+      merchantTin,
     );
     if (!oldLog) {
       const msg = `No existing bill for provided OrderId: ${order.OrderId} (merchantTin=${merchantTin})`;
@@ -170,7 +170,7 @@ function toPosDateTime(d: Date | string | number): string {
   function fmt(x: Date) {
     const pad = (n: number) => n.toString().padStart(2, "0");
     return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())} ${pad(
-      x.getHours()
+      x.getHours(),
     )}:${pad(x.getMinutes())}:${pad(x.getSeconds())}`;
   }
 }

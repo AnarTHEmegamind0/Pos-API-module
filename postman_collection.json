@@ -1,0 +1,480 @@
+{
+  "info": {
+    "_postman_id": "posapi-module-collection",
+    "name": "POSAPI Module - Ebarimt",
+    "description": "POSAPI-3 Service - Ebarimt VAT Receipt API\n\nМонгол Улсын eBarimt системтэй холбогдох API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4001",
+      "type": "string"
+    },
+    {
+      "key": "merchantTin",
+      "value": "12345678",
+      "type": "string"
+    },
+    {
+      "key": "posNo",
+      "value": "1001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Сервисийн төлөвийг шалгах"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bills",
+      "item": [
+        {
+          "name": "Add Bill (B2C Receipt)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"ORDER-001\",\n  \"CustomerTin\": null,\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"Items\": [\n    {\n      \"barCode\": \"1234567890123\",\n      \"name\": \"Бараа 1\",\n      \"qty\": 2,\n      \"unitPrice\": 15000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    },\n    {\n      \"barCode\": \"9876543210987\",\n      \"name\": \"Бараа 2\",\n      \"qty\": 1,\n      \"unitPrice\": 25000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    }\n  ],\n  \"Payments\": [\n    {\n      \"Amount\": 55000,\n      \"IsCash\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            },
+            "description": "Шинэ баримт үүсгэх (B2C - Хувь хүнд)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Bill (B2B Receipt with CustomerTin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"ORDER-002\",\n  \"CustomerTin\": \"5012345\",\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"Items\": [\n    {\n      \"barCode\": \"1234567890123\",\n      \"name\": \"Бараа 1\",\n      \"qty\": 5,\n      \"unitPrice\": 50000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    }\n  ],\n  \"Payments\": [\n    {\n      \"Amount\": 250000,\n      \"IsCash\": false\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBill"]
+            },
+            "description": "Шинэ баримт үүсгэх (B2B - Байгууллагад, CustomerTin-тэй)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Bill Invoice (B2C/B2B Invoice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"INV-001\",\n  \"CustomerTin\": \"5012345\",\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"Items\": [\n    {\n      \"barCode\": \"1234567890123\",\n      \"name\": \"Үйлчилгээ\",\n      \"qty\": 1,\n      \"unitPrice\": 100000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    }\n  ],\n  \"Payments\": [\n    {\n      \"Amount\": 100000,\n      \"IsCash\": false\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/addBillInvoice",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "addBillInvoice"]
+            },
+            "description": "Нэхэмжлэх баримт үүсгэх (Invoice төрөл)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"ORDER-001\",\n  \"CustomerTin\": null,\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"PreviousReceiptId\": null,\n  \"Items\": [\n    {\n      \"barCode\": \"1234567890123\",\n      \"name\": \"Бараа 1 (засварласан)\",\n      \"qty\": 3,\n      \"unitPrice\": 15000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    }\n  ],\n  \"Payments\": [\n    {\n      \"Amount\": 45000,\n      \"IsCash\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/updateBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "updateBill"]
+            },
+            "description": "Баримт засах. PreviousReceiptId өгөхгүй бол OrderId-аар хайж олно."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Bill Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"INV-001\",\n  \"CustomerTin\": \"5012345\",\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"PreviousReceiptId\": null,\n  \"Items\": [\n    {\n      \"barCode\": \"1234567890123\",\n      \"name\": \"Үйлчилгээ (засварласан)\",\n      \"qty\": 2,\n      \"unitPrice\": 100000,\n      \"EVAT\": \"VAT_ABLE\",\n      \"isNhat\": false,\n      \"measureUnit\": \"ш\",\n      \"barCodeType\": \"UNDEFINED\",\n      \"classificationCode\": \"1234567\",\n      \"taxProductCode\": \"6222900\"\n    }\n  ],\n  \"Payments\": [\n    {\n      \"Amount\": 200000,\n      \"IsCash\": false\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/updateBillInvoice",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "updateBillInvoice"]
+            },
+            "description": "Нэхэмжлэх баримт засах"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"OrderId\": \"ORDER-001\",\n  \"MerchantTin\": \"{{merchantTin}}\",\n  \"Items\": [],\n  \"Payments\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/deleteBill",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "deleteBill"]
+            },
+            "description": "Баримт устгах (буцаалт)"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bills",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/sendBills",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "sendBills"]
+            },
+            "description": "Хүлээгдэж буй бүх баримтуудыг илгээх"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings"]
+            },
+            "description": "Бүх тохиргоог авах"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"districtCode\": \"23\",\n  \"branchNo\": \"001\",\n  \"billIdSuffix\": \"01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings"]
+            },
+            "description": "Шинэ тохиргоо үүсгэх"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"districtCode\": \"23\",\n  \"branchNo\": \"002\",\n  \"billIdSuffix\": \"02\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings"]
+            },
+            "description": "Тохиргоог шинэчлэх"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Settings",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/settings/{{merchantTin}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "settings", "{{merchantTin}}"]
+            },
+            "description": "Тохиргоог устгах (merchantTin-аар)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Get All Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/logs?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Бүх захиалгын логуудыг авах (pagination-тай)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Log by OrderId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/logs?orderId=ORDER-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "logs"],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "ORDER-001"
+                }
+              ]
+            },
+            "description": "Тодорхой захиалгын логийг авах"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Returns",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/returns?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "returns"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Бүх буцаалтын логуудыг авах"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Returns by OrderId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/returns?orderId=ORDER-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "returns"],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "ORDER-001"
+                }
+              ]
+            },
+            "description": "Тодорхой захиалгын буцаалтын логийг авах"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Updates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/updates?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "updates"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Бүх шинэчлэлтийн логуудыг авах"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Updates by OrderId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/updates?orderId=ORDER-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "updates"],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "ORDER-001"
+                }
+              ]
+            },
+            "description": "Тодорхой захиалгын шинэчлэлтийн логийг авах"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ebarimt Info",
+      "item": [
+        {
+          "name": "Get Branch Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/info/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "info", "branches"]
+            },
+            "description": "Салбарын мэдээлэл авах (ebarimt API-с)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get TIN by Registration Number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/info/tin-by-reg/1234567",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "info", "tin-by-reg", "1234567"]
+            },
+            "description": "Регистрийн дугаараар ТИН олох"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Info by TIN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/info/tin/5012345",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "info", "tin", "5012345"]
+            },
+            "description": "ТИН-аар байгууллагын мэдээлэл авах (нэр, НӨАТ төлөгч эсэх гэх мэт)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Tax Codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posapi/info/product-tax-codes",
+              "host": ["{{baseUrl}}"],
+              "path": ["posapi", "info", "product-tax-codes"]
+            },
+            "description": "Бүтээгдэхүүний татварын кодуудыг авах"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

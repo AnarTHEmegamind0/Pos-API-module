@@ -1,7 +1,7 @@
-import { POS_API_BASE_URL } from "./config";
+import { POS_API_BASE_URL } from "./config.js";
 
-import type { TtdResult, TinResult } from "./types";
-import { executeHttpRequest } from "./http";
+import type { TtdResult, TinResult } from "./types.js";
+import { executeHttpRequest } from "./http.js";
 
 // ----- low-level GET helper -----
 async function getJson<T>(url: string): Promise<T> {
@@ -17,7 +17,7 @@ export async function postData(postData: string) {
     `${POS_API_BASE_URL}/rest/receipt`,
     "POST",
     JSON.parse(postData),
-    (s) => JSON.parse(s)
+    (s) => JSON.parse(s),
   );
 }
 
@@ -29,7 +29,7 @@ export async function deleteData(id: string, date: string) {
   return executeHttpRequest<string>(
     `${POS_API_BASE_URL}/rest/receipt`,
     "DELETE",
-    { id, date }
+    { id, date },
   );
 }
 
@@ -50,7 +50,7 @@ export function getTin(tinNo: string): Promise<TinResult> {
 }
 
 export async function getCombinedTinInfo(
-  regNo: string
+  regNo: string,
 ): Promise<TinResult | null> {
   try {
     const ttd = await getTTD(regNo);

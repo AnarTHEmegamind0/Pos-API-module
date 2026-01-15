@@ -1,0 +1,14 @@
+{
+  "workspace": {
+    "id": "b5e534d3-ab34-4cec-83bd-f3342bbce68e"
+  },
+  "entities": {
+    "collections": [
+      "../POS_API_Collection.json"
+    ],
+    "environments": [],
+    "specs": [],
+    "flows": [],
+    "globals": []
+  }
+}

@@ -1,4 +1,4 @@
-import type { Result } from "./types";
+import type { Result } from "./types.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -6,7 +6,7 @@ export async function executeHttpRequest<T>(
   url: string,
   method: "GET" | "POST" | "DELETE",
   data?: unknown,
-  deserializer?: (s: string) => T
+  deserializer?: (s: string) => T,
 ): Promise<Result<T>> {
   const rez: Result<T> = { success: false, message: "", data: null };
 
