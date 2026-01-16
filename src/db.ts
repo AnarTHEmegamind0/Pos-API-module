@@ -1,4 +1,4 @@
-// src/db.ts
+ // src/db.ts
 import pg from "pg";
 import { PosApiLog, PosApiSettings, PosApiUpdateLog } from "./log-types.js";
 import type { DirectBillRequest, DirectBillResponse } from "./types.js";
@@ -105,8 +105,6 @@ export async function initDb(): Promise<void> {
       request_json   JSONB NOT NULL,
       response_json  JSONB,
       ebarimt_id     TEXT,
-      lottery        TEXT,
-      qr_data        TEXT,
       
       total_amount   DECIMAL(18,2),
       total_vat      DECIMAL(18,2),
@@ -418,8 +416,6 @@ export interface ReceiptRecord {
   requestJson: DirectBillRequest;
   responseJson: DirectBillResponse | null;
   ebarimtId: string | null;
-  lottery: string | null;
-  qrData: string | null;
   totalAmount: number;
   totalVat: number;
   totalCityTax: number;
@@ -437,8 +433,6 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
   const p = getPool();
 
   const ebarimtId = input.response?.id ?? null;
-  const lottery = input.response?.lottery ?? null;
-  const qrData = input.response?.qrData ?? null;
   const totalAmount = input.request.totalAmount ?? 0;
   const totalVat = input.request.totalVAT ?? 0;
   const totalCityTax = input.request.totalCityTax ?? 0;
@@ -447,18 +441,13 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
   await p.query(
     `
     INSERT INTO pos_api_receipts (
-      order_id, merchant_tin, request_json, response_json,
-      ebarimt_id, lottery, qr_data,
-      total_amount, total_vat, total_city_tax, receipt_type,
+      order_id, merchant_tin, 
+      ebarimt_id, 
       success, error_message
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT(order_id, merchant_tin) DO UPDATE SET
-      request_json   = EXCLUDED.request_json,
-      response_json  = EXCLUDED.response_json,
       ebarimt_id     = EXCLUDED.ebarimt_id,
-      lottery        = EXCLUDED.lottery,
-      qr_data        = EXCLUDED.qr_data,
       total_amount   = EXCLUDED.total_amount,
       total_vat      = EXCLUDED.total_vat,
       total_city_tax = EXCLUDED.total_city_tax,
@@ -473,8 +462,6 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
       JSON.stringify(input.request),
       input.response ? JSON.stringify(input.response) : null,
       ebarimtId,
-      lottery,
-      qrData,
       totalAmount,
       totalVat,
       totalCityTax,
@@ -497,7 +484,7 @@ export async function findReceiptByOrderId(
     `
     SELECT 
       id, order_id, merchant_tin, request_json, response_json,
-      ebarimt_id, lottery, qr_data,
+      ebarimt_id,
       total_amount, total_vat, total_city_tax, receipt_type,
       success, error_message, created_at, updated_at
     FROM pos_api_receipts
@@ -516,8 +503,6 @@ export async function findReceiptByOrderId(
     requestJson: row.request_json,
     responseJson: row.response_json,
     ebarimtId: row.ebarimt_id,
-    lottery: row.lottery,
-    qrData: row.qr_data,
     totalAmount: parseFloat(row.total_amount),
     totalVat: parseFloat(row.total_vat),
     totalCityTax: parseFloat(row.total_city_tax),
@@ -540,7 +525,7 @@ export async function findReceiptByOrderIdOnly(
     `
     SELECT 
       id, order_id, merchant_tin, request_json, response_json,
-      ebarimt_id, lottery, qr_data,
+      ebarimt_id, 
       total_amount, total_vat, total_city_tax, receipt_type,
       success, error_message, created_at, updated_at
     FROM pos_api_receipts
@@ -561,8 +546,6 @@ export async function findReceiptByOrderIdOnly(
     requestJson: row.request_json,
     responseJson: row.response_json,
     ebarimtId: row.ebarimt_id,
-    lottery: row.lottery,
-    qrData: row.qr_data,
     totalAmount: parseFloat(row.total_amount),
     totalVat: parseFloat(row.total_vat),
     totalCityTax: parseFloat(row.total_city_tax),
