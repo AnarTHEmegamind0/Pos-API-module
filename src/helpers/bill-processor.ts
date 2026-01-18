@@ -51,7 +51,12 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     return { success: false, message: "receipts хоосон байна" };
   }
 
-  if (!input.payments || input.payments.length === 0) {
+  // Invoice эсэхийг шалгах
+  const isInvoice =
+    input.type === "B2B_INVOICE" || input.type === "B2C_INVOICE";
+
+  // Invoice биш бол payments заавал байх ёстой
+  if (!isInvoice && (!input.payments || input.payments.length === 0)) {
     return { success: false, message: "payments хоосон байна" };
   }
 
@@ -88,13 +93,15 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
   rootTotalVAT = round2(rootTotalVAT);
   rootTotalCityTax = round2(rootTotalCityTax);
 
-  // === Validate payments ===
-  const paymentValidation = validatePayments(input.payments, rootTotalAmount);
-  if (!paymentValidation.valid) {
-    return {
-      success: false,
-      message: paymentValidation.message || "Төлбөр таарахгүй",
-    };
+  // === Validate payments (Invoice биш үед) ===
+  if (!isInvoice) {
+    const paymentValidation = validatePayments(input.payments, rootTotalAmount);
+    if (!paymentValidation.valid) {
+      return {
+        success: false,
+        message: paymentValidation.message || "Төлбөр таарахгүй",
+      };
+    }
   }
 
   // === Build DirectBillRequest ===
@@ -109,7 +116,7 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     totalVAT: rootTotalVAT,
     totalCityTax: rootTotalCityTax,
     receipts: processedReceipts,
-    payments: input.payments as DirectPayment[],
+    payments: isInvoice ? [] : (input.payments as DirectPayment[]),
 
     // Optional fields
     customerTin: input.customerTin || "",
