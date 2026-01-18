@@ -19,6 +19,7 @@ import {
 
 // Bill processor helper
 import { processBillRequest } from "./helpers/index.js";
+import { checkOrderIdDuplicate } from "./helpers/duplicate-checker.js";
 
 import { logsRouter } from "./routes/logs.js";
 import { settingsRouter } from "./routes/settings.js";
@@ -44,8 +45,8 @@ app.use(
     origin: [
       "http://localhost:3000", // React development
       "http://127.0.0.1:3000",
-      "https://pos.itsystem.mn", // Production
-      "http://pos.itsystem.mn",
+      "https://posapi.itsystem.mn", // Production
+      "http://posapi.itsystem.mn",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -73,6 +74,45 @@ app.post("/posapi/addBill", async (req, res) => {
       "[addBill] Incoming payload:",
       JSON.stringify(payload, null, 2),
     );
+
+    // === ДАВХЦАЛТ ШАЛГАХ (force=true биш үед) ===
+    if (!payload.force) {
+      const dupCheck = await checkOrderIdDuplicate(
+        payload.orderId,
+        payload.merchantTin,
+      );
+
+      if (dupCheck.isDuplicate) {
+        console.log(
+          "[addBill] Duplicate orderId found:",
+          dupCheck.existingBill,
+        );
+        return res.status(409).json({
+          success: false,
+          duplicate: true,
+          existingBill: dupCheck.existingBill,
+          message: "ID давхцаж байна. Хамаагүй юу?",
+          data: null,
+        });
+      }
+    }
+
+    // === force=true бол UPDATE хийх (хуучин баримтыг inactiveId-аар солих) ===
+    if (payload.force) {
+      const existing = await checkOrderIdDuplicate(
+        payload.orderId,
+        payload.merchantTin,
+      );
+
+      if (existing.isDuplicate && existing.existingBill?.ebarimtId) {
+        // inactiveId-г хуучин баримтын ebarimtId-аар тохируулах
+        payload.inactiveId = existing.existingBill.ebarimtId;
+        console.log(
+          "[addBill] Force update - setting inactiveId:",
+          payload.inactiveId,
+        );
+      }
+    }
 
     // Татвар тооцоолж, бүрэн формат үүсгэх
     const processResult = processBillRequest(payload);

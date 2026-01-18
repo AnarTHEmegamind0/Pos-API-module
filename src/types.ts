@@ -194,6 +194,9 @@ export interface InputBillRequest {
   invoiceId?: string;
   billIdSuffix?: string;
 
+  // Давхцалт шалгах (force=true бол давхцалтыг үл тоомсорлож UPDATE хийнэ)
+  force?: boolean;
+
   // Receipts (taxType-аар бүлэглэсэн)
   receipts: InputReceipt[];
 
@@ -224,4 +227,21 @@ export interface InputPayment {
   code: string; // CASH | PAYMENT_CARD | BONUS_CARD_TEST | EMD | BANK_TRANSFER
   status: string; // PAID | PAY | REVERSED | ERROR
   paidAmount: number;
+}
+
+/**
+ * addBill endpoint-ийн response (давхцалт шалгасан үед)
+ */
+export interface AddBillResponse {
+  success: boolean;
+  message: string;
+  data: any;
+  duplicate?: boolean;
+  existingBill?: {
+    orderId: string;
+    merchantTin: string;
+    ebarimtId: string;
+    totalAmount: number;
+    createdAt: Date;
+  };
 }
