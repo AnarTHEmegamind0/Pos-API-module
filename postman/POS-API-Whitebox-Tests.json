@@ -1,17 +1,17 @@
 {
   "info": {
-    "name": "POS API Whitebox Tests",
+    "name": "POS API Whitebox Tests (taxProductCode fixed)",
     "_postman_id": "pos-api-whitebox-tests",
-    "description": "Бүх төрлийн баримт (B2B, B2C, Invoice, Receipt) болон VAT төрлүүдийг (VAT_ABLE, VAT_FREE, VAT_ZERO) тестлэх collection. Whitebox testing. Бүх баркодууд GS1 check digit шалгалт давсан.",
+    "description": "Бүх төрлийн баримт (B2B, B2C, Invoice, Receipt) болон VAT төрлүүдийг (VAT_ABLE, VAT_FREE, VAT_ZERO) тестлэх collection. Whitebox testing. Бүх баркодууд GS1 check digit шалгалт давсан. ✅ taxProductCode бүх кейс дээр нэмэгдсэн.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {"key": "baseUrl", "value": "http://localhost:4001", "type": "string"},
-    {"key": "merchantTin", "value": "37900846788", "type": "string"},
-    {"key": "districtCode", "value": "3402", "type": "string"},
-    {"key": "branchNo", "value": "001", "type": "string"},
-    {"key": "posNo", "value": "10012188", "type": "string"},
-    {"key": "customerTin", "value": "12345678", "type": "string"}
+    { "key": "baseUrl", "value": "http://localhost:4001", "type": "string" },
+    { "key": "merchantTin", "value": "37900846788", "type": "string" },
+    { "key": "districtCode", "value": "3402", "type": "string" },
+    { "key": "branchNo", "value": "001", "type": "string" },
+    { "key": "posNo", "value": "10012188", "type": "string" },
+    { "key": "customerTin", "value": "12345678", "type": "string" }
   ],
   "item": [
     {
@@ -21,76 +21,77 @@
           "name": "B2C Receipt - VAT_ABLE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"B2C-ABLE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ABLE бараа NHAT-тай\",\n          \"barCode\": \"8901234567890\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 2,\n          \"totalAmount\": 11200,\n          \"isNhat\": true\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
+              "raw": "{\n  \"orderId\": \"B2C-ABLE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ABLE бараа NHAT-тай\",\n          \"barCode\": \"8901234567890\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 2,\n          \"totalAmount\": 11200,\n          \"isNhat\": true,\n          \"taxProductCode\": \"6222900\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Receipt - VAT_ABLE no NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"B2C-ABLE-NONHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ABLE бараа NHAT-гүй\",\n          \"barCode\": \"8901234567906\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"totalAmount\": 11000,\n          \"isNhat\": false\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11000}]\n}"
+              "raw": "{\n  \"orderId\": \"B2C-ABLE-NONHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ABLE бараа NHAT-гүй\",\n          \"barCode\": \"8901234567906\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"totalAmount\": 11000,\n          \"isNhat\": false,\n          \"taxProductCode\": \"6222900\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Receipt - VAT_FREE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2C-FREE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_FREE бараа NHAT-тай\",\n          \"barCode\": \"8901234567913\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"кг\",\n          \"qty\": 5,\n          \"totalAmount\": 10200,\n          \"isNhat\": true,\n          \"taxProductCode\": \"410\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 10200}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Receipt - VAT_FREE no NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2C-FREE-NONHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_FREE бараа татваргүй\",\n          \"barCode\": \"8901234567920\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"л\",\n          \"qty\": 3,\n          \"totalAmount\": 15000,\n          \"isNhat\": false,\n          \"taxProductCode\": \"409\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 15000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Receipt - VAT_ZERO + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2C-ZERO-NHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ZERO бараа NHAT-тай\",\n          \"barCode\": \"8901234567937\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"totalAmount\": 20400,\n          \"isNhat\": true,\n          \"taxProductCode\": \"501\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 20400}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Receipt - VAT_ZERO no NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2C-ZERO-NONHAT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"VAT_ZERO бараа татваргүй\",\n          \"barCode\": \"8901234567944\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 2,\n          \"totalAmount\": 8000,\n          \"isNhat\": false,\n          \"taxProductCode\": \"507\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 8000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "2. B2B Receipt Tests",
       "item": [
@@ -98,40 +99,41 @@
           "name": "B2B Receipt - VAT_ABLE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"B2B-ABLE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"B2B VAT_ABLE бараа\",\n          \"barCode\": \"8901234567951\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 10,\n          \"totalAmount\": 112000,\n          \"isNhat\": true\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 112000}]\n}"
+              "raw": "{\n  \"orderId\": \"B2B-ABLE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"B2B VAT_ABLE бараа\",\n          \"barCode\": \"8901234567951\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 10,\n          \"totalAmount\": 112000,\n          \"isNhat\": true,\n          \"taxProductCode\": \"6222900\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 112000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2B Receipt - VAT_FREE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2B-FREE-NHAT-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"B2B VAT_FREE бараа\",\n          \"barCode\": \"8901234567968\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 5,\n          \"totalAmount\": 51000,\n          \"isNhat\": true,\n          \"taxProductCode\": \"410\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 51000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2B Receipt - VAT_ZERO no NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"orderId\": \"B2B-ZERO-NONHAT-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"B2B VAT_ZERO бараа\",\n          \"barCode\": \"8901234567975\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 20,\n          \"totalAmount\": 200000,\n          \"isNhat\": false,\n          \"taxProductCode\": \"501\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 200000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "3. B2C Invoice Tests",
       "item": [
@@ -139,28 +141,29 @@
           "name": "B2C Invoice - VAT_ABLE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"INV-B2C-ABLE-{{$timestamp}}\",\n  \"type\": \"B2C_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Нэхэмжлэх бараа 1\",\n          \"barCode\": \"8901234567982\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 3,\n          \"totalAmount\": 33600,\n          \"isNhat\": true\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 33600}]\n}"
+              "raw": "{\n  \"orderId\": \"INV-B2C-ABLE-{{$timestamp}}\",\n  \"type\": \"B2C_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Нэхэмжлэх бараа 1\",\n          \"barCode\": \"8901234567982\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 3,\n          \"totalAmount\": 33600,\n          \"isNhat\": true,\n          \"taxProductCode\": \"6222900\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 33600}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2C Invoice - VAT_FREE no NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"INV-B2C-FREE-{{$timestamp}}\",\n  \"type\": \"B2C_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Нэхэмжлэх VAT_FREE бараа\",\n          \"barCode\": \"8901234567999\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"totalAmount\": 50000,\n          \"isNhat\": false\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 50000}]\n}"
+              "raw": "{\n  \"orderId\": \"INV-B2C-FREE-{{$timestamp}}\",\n  \"type\": \"B2C_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Нэхэмжлэх VAT_FREE бараа\",\n          \"barCode\": \"8901234567999\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 1,\n          \"totalAmount\": 50000,\n          \"isNhat\": false,\n          \"taxProductCode\": \"409\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 50000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "4. B2B Invoice Tests",
       "item": [
@@ -168,28 +171,29 @@
           "name": "B2B Invoice - VAT_ABLE + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"INV-B2B-ABLE-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Байгууллагын нэхэмжлэх\",\n          \"barCode\": \"8901234567005\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 100,\n          \"totalAmount\": 1120000,\n          \"isNhat\": true\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 1120000}]\n}"
+              "raw": "{\n  \"orderId\": \"INV-B2B-ABLE-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Байгууллагын нэхэмжлэх\",\n          \"barCode\": \"8901234567005\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 100,\n          \"totalAmount\": 1120000,\n          \"isNhat\": true,\n          \"taxProductCode\": \"6222900\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 1120000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "B2B Invoice - VAT_ZERO + NHAT",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"INV-B2B-ZERO-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Экспортын бараа\",\n          \"barCode\": \"8901234567012\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 50,\n          \"totalAmount\": 510000,\n          \"isNhat\": true\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 510000}]\n}"
+              "raw": "{\n  \"orderId\": \"INV-B2B-ZERO-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\n          \"name\": \"Экспортын бараа\",\n          \"barCode\": \"8901234567012\",\n          \"classificationCode\": \"1410101\",\n          \"measureUnit\": \"ш\",\n          \"qty\": 50,\n          \"totalAmount\": 510000,\n          \"isNhat\": true,\n          \"taxProductCode\": \"501\"\n        }\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 510000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "5. Multi-Receipt Mixed VAT Tests",
       "item": [
@@ -197,28 +201,29 @@
           "name": "Mixed VAT - All 3 Types in One Bill",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"MIXED-ALL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"НӨАТ-тай бараа 1\", \"barCode\": \"1234567890128\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 22400, \"isNhat\": true},\n        {\"name\": \"НӨАТ-тай бараа 2\", \"barCode\": \"1234567890135\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"НӨАТ чөлөөлөгдсөн бараа\", \"barCode\": \"1234567890142\", \"classificationCode\": \"1410101\", \"measureUnit\": \"кг\", \"qty\": 5, \"totalAmount\": 25500, \"isNhat\": true}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Тэг хувьтай бараа\", \"barCode\": \"1234567890159\", \"classificationCode\": \"1410101\", \"measureUnit\": \"л\", \"qty\": 10, \"totalAmount\": 10200, \"isNhat\": true}\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 69300}]\n}"
+              "raw": "{\n  \"orderId\": \"MIXED-ALL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"НӨАТ-тай бараа 1\", \"barCode\": \"1234567890128\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 22400, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"НӨАТ-тай бараа 2\", \"barCode\": \"1234567890135\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"НӨАТ чөлөөлөгдсөн бараа\", \"barCode\": \"1234567890142\", \"classificationCode\": \"1410101\", \"measureUnit\": \"кг\", \"qty\": 5, \"totalAmount\": 25500, \"isNhat\": true, \"taxProductCode\": \"409\"}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Тэг хувьтай бараа\", \"barCode\": \"1234567890159\", \"classificationCode\": \"1410101\", \"measureUnit\": \"л\", \"qty\": 10, \"totalAmount\": 10200, \"isNhat\": true, \"taxProductCode\": \"501\"}\n      ]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 69300}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Mixed VAT - B2B with Multiple Receipts",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"B2B-MIXED-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\"name\": \"Тоног төхөөрөмж\", \"barCode\": \"2234567890127\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 560000, \"isNhat\": true}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\"name\": \"Эмийн бүтээгдэхүүн\", \"barCode\": \"2234567890134\", \"classificationCode\": \"1410101\", \"measureUnit\": \"хайрцаг\", \"qty\": 10, \"totalAmount\": 102000, \"isNhat\": true}\n      ]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 500000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 162000}\n  ]\n}"
+              "raw": "{\n  \"orderId\": \"B2B-MIXED-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\"name\": \"Тоног төхөөрөмж\", \"barCode\": \"2234567890127\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 560000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [\n        {\"name\": \"Эмийн бүтээгдэхүүн\", \"barCode\": \"2234567890134\", \"classificationCode\": \"1410101\", \"measureUnit\": \"хайрцаг\", \"qty\": 10, \"totalAmount\": 102000, \"isNhat\": true, \"taxProductCode\": \"410\"}\n      ]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 500000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 162000}\n  ]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "6. Large Bill with 20+ Items",
       "item": [
@@ -226,16 +231,17 @@
           "name": "Large Bill - 25 Items Mixed",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"LARGE-BILL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Бараа 01\", \"barCode\": \"3001234567892\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1120, \"isNhat\": true},\n        {\"name\": \"Бараа 02\", \"barCode\": \"3001234567908\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2240, \"isNhat\": true},\n        {\"name\": \"Бараа 03\", \"barCode\": \"3001234567915\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 3360, \"isNhat\": true},\n        {\"name\": \"Бараа 04\", \"barCode\": \"3001234567922\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true},\n        {\"name\": \"Бараа 05\", \"barCode\": \"3001234567939\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 11200, \"isNhat\": true},\n        {\"name\": \"Бараа 06\", \"barCode\": \"3001234567946\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 2240, \"isNhat\": true},\n        {\"name\": \"Бараа 07\", \"barCode\": \"3001234567953\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 4, \"totalAmount\": 4480, \"isNhat\": true},\n        {\"name\": \"Бараа 08\", \"barCode\": \"3001234567960\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 8960, \"isNhat\": true},\n        {\"name\": \"Бараа 09\", \"barCode\": \"3001234567977\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 5, \"totalAmount\": 5600, \"isNhat\": true},\n        {\"name\": \"Бараа 10\", \"barCode\": \"3001234567984\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3360, \"isNhat\": true}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Татваргүй 01\", \"barCode\": \"4001234567891\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1020, \"isNhat\": true},\n        {\"name\": \"Татваргүй 02\", \"barCode\": \"4001234567907\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true},\n        {\"name\": \"Татваргүй 03\", \"barCode\": \"4001234567914\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5100, \"isNhat\": true},\n        {\"name\": \"Татваргүй 04\", \"barCode\": \"4001234567921\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 3060, \"isNhat\": true},\n        {\"name\": \"Татваргүй 05\", \"barCode\": \"4001234567938\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 10200, \"isNhat\": true},\n        {\"name\": \"Татваргүй 06\", \"barCode\": \"4001234567945\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true},\n        {\"name\": \"Татваргүй 07\", \"barCode\": \"4001234567952\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 4080, \"isNhat\": true},\n        {\"name\": \"Татваргүй 08\", \"barCode\": \"4001234567969\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 4, \"totalAmount\": 8160, \"isNhat\": true}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Тэг татвар 01\", \"barCode\": \"5001234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1020, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 02\", \"barCode\": \"5001234567906\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 03\", \"barCode\": \"5001234567913\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3060, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 04\", \"barCode\": \"5001234567920\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 6120, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 05\", \"barCode\": \"5001234567937\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5100, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 06\", \"barCode\": \"5001234567944\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 4080, \"isNhat\": true},\n        {\"name\": \"Тэг татвар 07\", \"barCode\": \"5001234567951\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 2040, \"isNhat\": true}\n      ]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 50000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 57620}\n  ]\n}"
+              "raw": "{\n  \"orderId\": \"LARGE-BILL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Бараа 01\", \"barCode\": \"3001234567892\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1120, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 02\", \"barCode\": \"3001234567908\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2240, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 03\", \"barCode\": \"3001234567915\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 3360, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 04\", \"barCode\": \"3001234567922\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 05\", \"barCode\": \"3001234567939\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 06\", \"barCode\": \"3001234567946\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 2240, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 07\", \"barCode\": \"3001234567953\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 4, \"totalAmount\": 4480, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 08\", \"barCode\": \"3001234567960\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 8960, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 09\", \"barCode\": \"3001234567977\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 5, \"totalAmount\": 5600, \"isNhat\": true, \"taxProductCode\": \"6222900\"},\n        {\"name\": \"Бараа 10\", \"barCode\": \"3001234567984\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3360, \"isNhat\": true, \"taxProductCode\": \"6222900\"}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_FREE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Татваргүй 01\", \"barCode\": \"4001234567891\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1020, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 02\", \"barCode\": \"4001234567907\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 03\", \"barCode\": \"4001234567914\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5100, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 04\", \"barCode\": \"4001234567921\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 3060, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 05\", \"barCode\": \"4001234567938\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 10200, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 06\", \"barCode\": \"4001234567945\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 07\", \"barCode\": \"4001234567952\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 4080, \"isNhat\": true, \"taxProductCode\": \"409\"},\n        {\"name\": \"Татваргүй 08\", \"barCode\": \"4001234567969\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 4, \"totalAmount\": 8160, \"isNhat\": true, \"taxProductCode\": \"409\"}\n      ]\n    },\n    {\n      \"taxType\": \"VAT_ZERO\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [\n        {\"name\": \"Тэг татвар 01\", \"barCode\": \"5001234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1020, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 02\", \"barCode\": \"5001234567906\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 2040, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 03\", \"barCode\": \"5001234567913\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3060, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 04\", \"barCode\": \"5001234567920\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 3, \"totalAmount\": 6120, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 05\", \"barCode\": \"5001234567937\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5100, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 06\", \"barCode\": \"5001234567944\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 2, \"totalAmount\": 4080, \"isNhat\": true, \"taxProductCode\": \"501\"},\n        {\"name\": \"Тэг татвар 07\", \"barCode\": \"5001234567951\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 2040, \"isNhat\": true, \"taxProductCode\": \"501\"}\n      ]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 50000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 57620}\n  ]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "7. Error Scenarios (Negative Tests)",
       "item": [
@@ -243,136 +249,110 @@
           "name": "ERROR - Missing orderId",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"CUSTOM123\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
+              "raw": "{\n  \"orderId\": \"\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"CUSTOM123\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Missing merchantTin",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-MERCH-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"CUSTOM456\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
+              "raw": "{\n  \"orderId\": \"ERR-MERCH-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"CUSTOM456\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Empty receipts array",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-EMPTY-REC-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-EMPTY-REC-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Empty items array",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-EMPTY-ITEMS-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": []\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-EMPTY-ITEMS-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": []\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Zero quantity",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-ZERO-QTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST1\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 0, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-ZERO-QTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST1\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 0, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Negative quantity",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-NEG-QTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST2\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": -5, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-NEG-QTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST2\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": -5, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Zero totalAmount",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-ZERO-AMT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST3\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 0, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 0}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-ZERO-AMT-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST3\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 0, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 0}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Payment mismatch",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-PAY-MISMATCH-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"8901234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-PAY-MISMATCH-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"8901234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Missing item name",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-NO-NAME-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"\", \"barCode\": \"ERRTEST4\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-NO-NAME-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"\", \"barCode\": \"ERRTEST4\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1000}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - Empty payments array",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-NO-PAY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST5\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": []\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-NO-PAY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"ERRTEST5\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "ERROR - B2B without customerTin",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"ERR-B2B-NO-TIN-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"8901234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"ERR-B2B-NO-TIN-{{$timestamp}}\",\n  \"type\": \"B2B_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Test\", \"barCode\": \"8901234567890\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}" },
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "8. Payment Type Tests",
       "item": [
@@ -380,28 +360,29 @@
           "name": "Payment - Multiple CASH + CARD",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"PAY-MULTI-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Олон төлбөрийн бараа\", \"barCode\": \"6001234567899\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 112000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 50000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 62000}\n  ]\n}"
+              "raw": "{\n  \"orderId\": \"PAY-MULTI-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Олон төлбөрийн бараа\", \"barCode\": \"6001234567899\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 112000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [\n    {\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 50000},\n    {\"code\": \"PAYMENT_CARD\", \"status\": \"PAID\", \"paidAmount\": 62000}\n  ]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Payment - BANK_TRANSFER only",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"PAY-BANK-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"bankAccountNo\": \"5000123456\",\n      \"items\": [{\"name\": \"Банкны шилжүүлгээр\", \"barCode\": \"6001234567905\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 560000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 560000}]\n}"
+              "raw": "{\n  \"orderId\": \"PAY-BANK-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"bankAccountNo\": \"5000123456\",\n      \"items\": [{\"name\": \"Банкны шилжүүлгээр\", \"barCode\": \"6001234567905\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 560000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 560000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "9. Barcode Type Tests",
       "item": [
@@ -409,64 +390,65 @@
           "name": "Barcode - GS1 Valid (13 digits)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"BC-GS1-VALID-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"GS1-13 зөв баркод\", \"barCode\": \"4901234567894\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
+              "raw": "{\n  \"orderId\": \"BC-GS1-VALID-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"GS1-13 зөв баркод\", \"barCode\": \"4901234567894\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Barcode - ISBN Valid (978 prefix)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"BC-ISBN-VALID-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Ном ISBN зөв баркод\", \"barCode\": \"9781234567897\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 22400, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 22400}]\n}"
+              "raw": "{\n  \"orderId\": \"BC-ISBN-VALID-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Ном ISBN зөв баркод\", \"barCode\": \"9781234567897\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 22400, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 22400}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Barcode - UNDEFINED (custom text)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"BC-UNDEF-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Custom баркод\", \"barCode\": \"ABC123XYZ\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
+              "raw": "{\n  \"orderId\": \"BC-UNDEF-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Custom баркод\", \"barCode\": \"ABC123XYZ\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Barcode - Empty barcode",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"BC-EMPTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Баркодгүй бараа\", \"barCode\": \"\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3360, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 3360}]\n}"
+              "raw": "{\n  \"orderId\": \"BC-EMPTY-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Баркодгүй бараа\", \"barCode\": \"\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 3360, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 3360}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Barcode - Invalid GS1 checksum (should be UNDEFINED)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"BC-INVALID-GS1-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Буруу check digit GS1\", \"barCode\": \"8901234567893\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
+              "raw": "{\n  \"orderId\": \"BC-INVALID-GS1-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Буруу check digit GS1\", \"barCode\": \"8901234567893\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]
     },
+
     {
       "name": "10. Edge Cases",
       "item": [
@@ -474,60 +456,60 @@
           "name": "Edge - Decimal quantity (2.5 kg)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"EDGE-DECIMAL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Жинтэй бараа\", \"barCode\": \"7001234567898\", \"classificationCode\": \"1410101\", \"measureUnit\": \"кг\", \"qty\": 2.5, \"totalAmount\": 28000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 28000}]\n}"
+              "raw": "{\n  \"orderId\": \"EDGE-DECIMAL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Жинтэй бараа\", \"barCode\": \"7001234567898\", \"classificationCode\": \"1410101\", \"measureUnit\": \"кг\", \"qty\": 2.5, \"totalAmount\": 28000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 28000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Edge - Very small amount (1₮)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"EDGE-SMALL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Хямд бараа\", \"barCode\": \"7001234567904\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1}]\n}"
+              "raw": "{\n  \"orderId\": \"EDGE-SMALL-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Хямд бараа\", \"barCode\": \"7001234567904\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 1, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 1}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Edge - Very large amount (100M₮)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"EDGE-LARGE-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [{\"name\": \"Үнэтэй тоног төхөөрөмж\", \"barCode\": \"7001234567911\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 112000000, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 112000000}]\n}"
+              "raw": "{\n  \"orderId\": \"EDGE-LARGE-{{$timestamp}}\",\n  \"type\": \"B2B_INVOICE\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"customerTin\": \"{{customerTin}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"customerTin\": \"{{customerTin}}\",\n      \"items\": [{\"name\": \"Үнэтэй тоног төхөөрөмж\", \"barCode\": \"7001234567911\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 112000000, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"BANK_TRANSFER\", \"status\": \"PAID\", \"paidAmount\": 112000000}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Edge - Unicode item name",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"EDGE-UNICODE-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Монгол бичиг 中文 한국어\", \"barCode\": \"7001234567928\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
+              "raw": "{\n  \"orderId\": \"EDGE-UNICODE-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Монгол бичиг 中文 한국어\", \"barCode\": \"7001234567928\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 11200, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 11200}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         },
         {
           "name": "Edge - Long item name (200 chars)",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"EDGE-LONGNAME-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Маш урт нэртэй бараа бүтээгдэхүүний нэр энд бичигдэх болно. Энэ нь 200 тэмдэгтээс илүү урт байх ёстой тул бид үргэлжлүүлэн бичнэ. Ингээд өргөн хүрээтэй бараа бүтээгдэхүүний нэрийг оруулж байна.\", \"barCode\": \"7001234567935\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
+              "raw": "{\n  \"orderId\": \"EDGE-LONGNAME-{{$timestamp}}\",\n  \"type\": \"B2C_RECEIPT\",\n  \"merchantTin\": \"{{merchantTin}}\",\n  \"districtCode\": \"{{districtCode}}\",\n  \"branchNo\": \"{{branchNo}}\",\n  \"posNo\": \"{{posNo}}\",\n  \"receipts\": [\n    {\n      \"taxType\": \"VAT_ABLE\",\n      \"merchantTin\": \"{{merchantTin}}\",\n      \"items\": [{\"name\": \"Маш урт нэртэй бараа бүтээгдэхүүний нэр энд бичигдэх болно. Энэ нь 200 тэмдэгтээс илүү урт байх ёстой тул бид үргэлжлүүлэн бичнэ. Ингээд өргөн хүрээтэй бараа бүтээгдэхүүний нэрийг оруулж байна.\", \"barCode\": \"7001234567935\", \"classificationCode\": \"1410101\", \"measureUnit\": \"ш\", \"qty\": 1, \"totalAmount\": 5600, \"isNhat\": true, \"taxProductCode\": \"6222900\"}]\n    }\n  ],\n  \"payments\": [{\"code\": \"CASH\", \"status\": \"PAID\", \"paidAmount\": 5600}]\n}"
             },
-            "url": {"raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"]}
+            "url": { "raw": "{{baseUrl}}/posapi/addBill", "host": ["{{baseUrl}}"], "path": ["posapi", "addBill"] }
           }
         }
       ]

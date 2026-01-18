@@ -55,6 +55,14 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     return { success: false, message: "payments хоосон байна" };
   }
 
+  // B2B баримт бол customerTin заавал байх ёстой
+  if (
+    (input.type === "B2B_RECEIPT" || input.type === "B2B_INVOICE") &&
+    !input.customerTin
+  ) {
+    return { success: false, message: "Байгууллагын ТТД оруулна уу" };
+  }
+
   // === Process receipts ===
   const processedReceipts: DirectReceipt[] = [];
   let rootTotalAmount = 0;
