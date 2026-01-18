@@ -38,3 +38,22 @@ export interface PosApiSettings {
   billIdSuffix: string;
   updatedAt?: string;
 }
+
+// Response logs (for debugging)
+export interface PosApiResponseLog {
+  id: number;
+  orderId: string;
+  merchantTin: string;
+  ebarimtId: string | null;
+  totalAmount: number;
+  totalVat: number;
+  totalCityTax: number;
+  receiptType: string;
+  success: boolean;
+  errorMessage: string | null;
+  responseStatus: string | null; // "SUCCESS" | "ERROR" | "PAYMENT"
+  responseMessage: string | null; // ST-Ebarimt-ээс ирсэн мессеж
+  responseDate: Date | null; // ST-Ebarimt-ээс ирсэн огноо
+  createdAt: Date;
+  updatedAt: Date;
+}

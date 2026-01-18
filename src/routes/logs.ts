@@ -186,3 +186,155 @@ logsRouter.get("/updates", async (req, res) => {
       .json({ ok: false, error: e?.message ?? "Failed to list updates" });
   }
 });
+
+/**
+ * GET /posapi/response-logs
+ * List response logs from pos_api_receipts table.
+ * Query params:
+ *   - orderId: filter by order ID
+ *   - status: filter by response_status (ERROR, SUCCESS, PAYMENT)
+ *   - limit: max records (default 50, max 500)
+ *   - offset: pagination offset
+ */
+logsRouter.get("/response-logs", async (req, res) => {
+  try {
+    const pool = getPool();
+    const orderId = (req.query.orderId as string) || undefined;
+    const status = (req.query.status as string) || undefined;
+    const limit = Math.max(1, Math.min(500, Number(req.query.limit ?? 50)));
+    const offset = Math.max(0, Number(req.query.offset ?? 0));
+
+    // Build WHERE conditions
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (orderId) {
+      conditions.push(`order_id = $${paramIndex++}`);
+      params.push(orderId);
+    }
+
+    if (status) {
+      conditions.push(`response_status = $${paramIndex++}`);
+      params.push(status.toUpperCase());
+    }
+
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Query data
+    const result = await pool.query(
+      `SELECT 
+        id, order_id, merchant_tin, ebarimt_id,
+        total_amount, total_vat, total_city_tax, receipt_type,
+        success, error_message,
+        response_status, response_message, response_date,
+        created_at, updated_at
+      FROM pos_api_receipts
+      ${whereClause}
+      ORDER BY updated_at DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex}`,
+      [...params, limit, offset],
+    );
+
+    // Count total
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM pos_api_receipts ${whereClause}`,
+      params,
+    );
+    const count = parseInt(countResult.rows[0].count, 10);
+
+    res.json({
+      ok: true,
+      meta: { total: count, limit, offset },
+      data: result.rows.map((r: any) => ({
+        id: r.id,
+        orderId: r.order_id,
+        merchantTin: r.merchant_tin,
+        ebarimtId: r.ebarimt_id,
+        totalAmount: parseFloat(r.total_amount),
+        totalVat: parseFloat(r.total_vat),
+        totalCityTax: parseFloat(r.total_city_tax),
+        receiptType: r.receipt_type,
+        success: r.success,
+        errorMessage: r.error_message,
+        responseStatus: r.response_status,
+        responseMessage: r.response_message,
+        responseDate: r.response_date ? new Date(r.response_date) : null,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      })),
+    });
+  } catch (e: any) {
+    res
+      .status(500)
+      .json({ ok: false, error: e?.message ?? "Failed to list response logs" });
+  }
+});
+
+/**
+ * GET /posapi/response-logs/:orderId
+ * Get response log by order ID
+ */
+logsRouter.get("/response-logs/:orderId", async (req, res) => {
+  try {
+    const pool = getPool();
+    const { orderId } = req.params;
+    const merchantTin = (req.query.merchantTin as string) || undefined;
+
+    let whereClause = "WHERE order_id = $1";
+    const params: any[] = [orderId];
+
+    if (merchantTin) {
+      whereClause += " AND merchant_tin = $2";
+      params.push(merchantTin);
+    }
+
+    const result = await pool.query(
+      `SELECT 
+        id, order_id, merchant_tin, ebarimt_id,
+        total_amount, total_vat, total_city_tax, receipt_type,
+        success, error_message,
+        response_status, response_message, response_date,
+        created_at, updated_at
+      FROM pos_api_receipts
+      ${whereClause}
+      ORDER BY updated_at DESC`,
+      params,
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Response log not found",
+      });
+    }
+
+    const data = result.rows.map((r: any) => ({
+      id: r.id,
+      orderId: r.order_id,
+      merchantTin: r.merchant_tin,
+      ebarimtId: r.ebarimt_id,
+      totalAmount: parseFloat(r.total_amount),
+      totalVat: parseFloat(r.total_vat),
+      totalCityTax: parseFloat(r.total_city_tax),
+      receiptType: r.receipt_type,
+      success: r.success,
+      errorMessage: r.error_message,
+      responseStatus: r.response_status,
+      responseMessage: r.response_message,
+      responseDate: r.response_date ? new Date(r.response_date) : null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
+
+    res.json({
+      ok: true,
+      data: data.length === 1 ? data[0] : data,
+    });
+  } catch (e: any) {
+    res
+      .status(500)
+      .json({ ok: false, error: e?.message ?? "Failed to get response log" });
+  }
+});

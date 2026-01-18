@@ -4,7 +4,11 @@ import express from "express";
 import cors from "cors";
 
 import { PosApiWrapper } from "./wrapper.js";
-import type { DirectBillRequest, DeleteBillRequest } from "./types.js";
+import type {
+  DirectBillRequest,
+  DeleteBillRequest,
+  InputBillRequest,
+} from "./types.js";
 
 // DB helpers
 import {
@@ -12,6 +16,9 @@ import {
   findReceiptByOrderId,
   findReceiptByOrderIdOnly,
 } from "./db.js";
+
+// Bill processor helper
+import { processBillRequest } from "./helpers/index.js";
 
 import { logsRouter } from "./routes/logs.js";
 import { settingsRouter } from "./routes/settings.js";
@@ -59,36 +66,46 @@ app.get("/health", (_req, res) => {
 // ========== ADD BILL ==========
 app.post("/posapi/addBill", async (req, res) => {
   try {
-    const payload = req.body as DirectBillRequest;
+    const payload = req.body as InputBillRequest;
 
-    // Validation
-    if (!payload.orderId) {
+    // === CONSOLE LOG: Ирсэн payload ===
+    console.log(
+      "[addBill] Incoming payload:",
+      JSON.stringify(payload, null, 2),
+    );
+
+    // Татвар тооцоолж, бүрэн формат үүсгэх
+    const processResult = processBillRequest(payload);
+
+    if (!processResult.success) {
+      console.error("[addBill] Process error:", processResult.message);
       return res.status(400).json({
         success: false,
-        message: "orderId is required",
+        message: processResult.message,
         data: null,
       });
     }
 
-    if (!payload.merchantTin) {
-      return res.status(400).json({
-        success: false,
-        message: "merchantTin is required",
-        data: null,
-      });
-    }
+    const billRequest = processResult.data;
 
-    if (!payload.receipts || payload.receipts.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "receipts array is required and must not be empty",
-        data: null,
-      });
-    }
+    // === CONSOLE LOG: Боловсруулсан request ===
+    console.log(
+      "[addBill] Processed request:",
+      JSON.stringify(billRequest, null, 2),
+    );
 
-    const result = await posapi.POST_BILL(payload);
+    // ST-Ebarimt руу илгээх
+    const result = await posapi.POST_BILL(billRequest);
+
+    // === CONSOLE LOG: Response ===
+    console.log(
+      "[addBill] ST-Ebarimt response:",
+      JSON.stringify(result, null, 2),
+    );
+
     return res.json(result);
   } catch (err: any) {
+    console.error("[addBill] Exception:", err);
     return res.status(500).json({
       success: false,
       message: err?.message ?? "Failed to add bill",
@@ -100,11 +117,19 @@ app.post("/posapi/addBill", async (req, res) => {
 // ========== UPDATE BILL ==========
 app.post("/posapi/updateBill", async (req, res) => {
   try {
-    const payload = req.body as DirectBillRequest;
+    const payload = req.body as InputBillRequest;
+
+    // === CONSOLE LOG: Ирсэн payload ===
+    console.log(
+      "[updateBill] Incoming payload:",
+      JSON.stringify(payload, null, 2),
+    );
+
     const { orderId, merchantTin } = payload;
 
     // Validation
     if (!orderId) {
+      console.error("[updateBill] Error: orderId is required");
       return res.status(400).json({
         success: false,
         message: "orderId is required",
@@ -112,9 +137,23 @@ app.post("/posapi/updateBill", async (req, res) => {
       });
     }
 
+    // Татвар тооцоолж, бүрэн формат үүсгэх
+    const processResult = processBillRequest(payload);
+
+    if (!processResult.success) {
+      console.error("[updateBill] Process error:", processResult.message);
+      return res.status(400).json({
+        success: false,
+        message: processResult.message,
+        data: null,
+      });
+    }
+
+    const billRequest = processResult.data;
+
     // Хуучин баримт хайх
-    let existing = null;
-    if (!payload.inactiveId) {
+    if (!billRequest.inactiveId) {
+      let existing = null;
       if (merchantTin) {
         existing = await findReceiptByOrderId(orderId, merchantTin);
       } else {
@@ -122,6 +161,10 @@ app.post("/posapi/updateBill", async (req, res) => {
       }
 
       if (!existing?.ebarimtId) {
+        console.error(
+          "[updateBill] Error: No existing bill found for OrderId:",
+          orderId,
+        );
         return res.status(404).json({
           success: false,
           message:
@@ -131,12 +174,27 @@ app.post("/posapi/updateBill", async (req, res) => {
       }
 
       // inactiveId-г хуучин баримтын ID-аар тохируулах
-      payload.inactiveId = existing.ebarimtId;
+      billRequest.inactiveId = existing.ebarimtId;
     }
 
-    const result = await posapi.POST_BILL(payload);
+    // === CONSOLE LOG: Боловсруулсан request ===
+    console.log(
+      "[updateBill] Processed request:",
+      JSON.stringify(billRequest, null, 2),
+    );
+
+    // ST-Ebarimt руу илгээх
+    const result = await posapi.POST_BILL(billRequest);
+
+    // === CONSOLE LOG: Response ===
+    console.log(
+      "[updateBill] ST-Ebarimt response:",
+      JSON.stringify(result, null, 2),
+    );
+
     return res.json(result);
   } catch (err: any) {
+    console.error("[updateBill] Exception:", err);
     return res.status(500).json({
       success: false,
       message: err?.message ?? "Failed to update bill",

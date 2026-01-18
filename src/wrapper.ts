@@ -43,19 +43,29 @@ export class PosApiWrapper {
     // ST-Ebarimt руу явуулах
     const result = await Client.postData(JSON.stringify(payload));
 
-    // DB-д хадгалах
+    // Response-ээс status, message, date авах
+    const responseData = result.data as DirectBillResponse | null;
+
+    // DB-д хадгалах (response-ийн status, message, date-тэй хамт)
     await saveReceipt({
       orderId,
       merchantTin: payload.merchantTin,
       request: payload,
-      response: result.data as DirectBillResponse | null,
-      success: result.success,
+      response: responseData,
+      success: result.success && responseData?.status === "SUCCESS",
       errorMessage: result.success ? null : result.message,
+      // Response fields
+      responseStatus: responseData?.status ?? null,
+      responseMessage: responseData?.message ?? null,
+      responseDate: responseData?.date ?? null,
     });
 
-    if (result.success && result.data) {
+    // Response status-аар амжилт эсэхийг шалгах
+    const isSuccess = result.success && responseData?.status === "SUCCESS";
+
+    if (isSuccess && responseData) {
       console.log(
-        `[addBill] Success - OrderId: ${orderId}, EbarimtId: ${result.data.id}`,
+        `[addBill] Success - OrderId: ${orderId}, EbarimtId: ${responseData.id}`,
       );
       this.deps.notifySuccess?.(`Bill created: ${orderId}`);
 
@@ -63,17 +73,19 @@ export class PosApiWrapper {
       return {
         success: true,
         message: result.message,
-        data: { ...result.data, orderId },
+        data: { ...responseData, orderId },
       };
     } else {
+      // Error message-ийг response-ээс авах
+      const errorMsg = responseData?.message ?? result.message;
       console.error(
-        `[addBill] Error - OrderId: ${orderId}, Message: ${result.message}`,
+        `[addBill] Error - OrderId: ${orderId}, Status: ${responseData?.status ?? "N/A"}, Message: ${errorMsg}`,
       );
-      this.deps.notifyError?.(`POS API error: ${result.message}`);
+      this.deps.notifyError?.(`POS API error: ${errorMsg}`);
       return {
         success: false,
-        message: result.message,
-        data: null,
+        message: errorMsg,
+        data: responseData ? { ...responseData, orderId } : null,
       };
     }
   }
@@ -104,10 +116,12 @@ export class PosApiWrapper {
       return { success: false, message: msg, data: null };
     }
 
-    // Date format for delete
-    const dateStr = receipt.responseJson?.date ?? new Date().toISOString();
+    // responseDate-ийг ашиглах, эсвэл одоогийн огноо
+    const deleteDate = receipt.responseDate
+      ? receipt.responseDate.toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0];
 
-    const result = await Client.deleteData(receipt.ebarimtId, dateStr);
+    const result = await Client.deleteData(receipt.ebarimtId, deleteDate);
 
     if (result.success) {
       console.log(

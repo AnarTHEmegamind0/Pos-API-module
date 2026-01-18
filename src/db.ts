@@ -1,4 +1,4 @@
- // src/db.ts
+// src/db.ts
 import pg from "pg";
 import { PosApiLog, PosApiSettings, PosApiUpdateLog } from "./log-types.js";
 import type { DirectBillRequest, DirectBillResponse } from "./types.js";
@@ -6,6 +6,7 @@ import type { DirectBillRequest, DirectBillResponse } from "./types.js";
 const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
+let isDbConnected = false;
 
 export function getPool(): pg.Pool {
   if (!pool) {
@@ -14,15 +15,55 @@ export function getPool(): pg.Pool {
         process.env.DATABASE_URL ||
         "postgresql://postgres:postgres@localhost:5432/posapi",
     });
+
+    // Handle connection errors
+    pool.on("error", (err) => {
+      console.error("Unexpected database pool error:", err);
+      isDbConnected = false;
+    });
   }
   return pool;
 }
 
-export async function initDb(): Promise<void> {
-  const p = getPool();
+/**
+ * Check if database connection is available
+ */
+export async function checkDbConnection(): Promise<boolean> {
+  try {
+    const p = getPool();
+    await p.query("SELECT 1");
+    isDbConnected = true;
+    return true;
+  } catch (error) {
+    console.error("Database connection check failed:", error);
+    isDbConnected = false;
+    return false;
+  }
+}
 
-  // main logs
-  await p.query(`
+/**
+ * Get database connection status
+ */
+export function isDbReady(): boolean {
+  return isDbConnected;
+}
+
+export async function initDb(): Promise<void> {
+  try {
+    const p = getPool();
+
+    // Check if database connection is available
+    const isConnected = await checkDbConnection();
+    if (!isConnected) {
+      throw new Error(
+        "Cannot connect to database. Please check if PostgreSQL is running and database exists.",
+      );
+    }
+
+    console.log("Initializing database tables...");
+
+    // main logs
+    await p.query(`
     CREATE TABLE IF NOT EXISTS pos_api_logs (
       log_id       SERIAL PRIMARY KEY,
       order_id     TEXT NOT NULL,
@@ -38,8 +79,8 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  // return/cancel logs
-  await p.query(`
+    // return/cancel logs
+    await p.query(`
     CREATE TABLE IF NOT EXISTS pos_api_return_logs (
       log_id       SERIAL PRIMARY KEY,
       order_id     TEXT NOT NULL,
@@ -53,8 +94,8 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  // update link logs
-  await p.query(`
+    // update link logs
+    await p.query(`
     CREATE TABLE IF NOT EXISTS pos_api_update_logs (
       log_id       SERIAL PRIMARY KEY,
       order_id     TEXT NOT NULL,
@@ -67,7 +108,7 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  await p.query(`
+    await p.query(`
     CREATE TABLE IF NOT EXISTS pos_api_settings (
       merchant_tin   TEXT PRIMARY KEY,
       pos_no         TEXT NOT NULL,
@@ -78,32 +119,30 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  // Create indexes if not exists
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_logs_order_id ON pos_api_logs(order_id);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_retlogs_order_id ON pos_api_return_logs(order_id);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_order_id ON pos_api_update_logs(order_id);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_old_id ON pos_api_update_logs(old_id);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_new_id ON pos_api_update_logs(new_id);`,
-  );
+    // Create indexes if not exists
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_logs_order_id ON pos_api_logs(order_id);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_retlogs_order_id ON pos_api_return_logs(order_id);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_order_id ON pos_api_update_logs(order_id);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_old_id ON pos_api_update_logs(old_id);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_updlogs_new_id ON pos_api_update_logs(new_id);`,
+    );
 
-  // Receipts table - бүрэн JSON хадгалах
-  await p.query(`
+    // Receipts table - бүрэн JSON хадгалах
+    await p.query(`
     CREATE TABLE IF NOT EXISTS pos_api_receipts (
       id             SERIAL PRIMARY KEY,
       order_id       TEXT NOT NULL,
       merchant_tin   TEXT NOT NULL,
       
-      request_json   JSONB NOT NULL,
-      response_json  JSONB,
       ebarimt_id     TEXT,
       
       total_amount   DECIMAL(18,2),
@@ -114,6 +153,11 @@ export async function initDb(): Promise<void> {
       success        BOOLEAN NOT NULL DEFAULT false,
       error_message  TEXT,
       
+      -- Response fields (ST-Ebarimt-ээс ирсэн)
+      response_status   TEXT,
+      response_message  TEXT,
+      response_date     TIMESTAMPTZ,
+      
       created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       
@@ -121,15 +165,67 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_order_id ON pos_api_receipts(order_id);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_merchant_tin ON pos_api_receipts(merchant_tin);`,
-  );
-  await p.query(
-    `CREATE INDEX IF NOT EXISTS idx_pos_receipts_ebarimt_id ON pos_api_receipts(ebarimt_id);`,
-  );
+    // Add new columns if they don't exist (for existing databases)
+    await p.query(`
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pos_api_receipts' AND column_name='response_status') THEN
+        ALTER TABLE pos_api_receipts ADD COLUMN response_status TEXT;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pos_api_receipts' AND column_name='response_message') THEN
+        ALTER TABLE pos_api_receipts ADD COLUMN response_message TEXT;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pos_api_receipts' AND column_name='response_date') THEN
+        ALTER TABLE pos_api_receipts ADD COLUMN response_date TIMESTAMPTZ;
+      END IF;
+    END $$;
+  `);
+
+    // Drop unused columns (request_json, response_json) if they exist
+    await p.query(`
+    DO $$ 
+    BEGIN 
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pos_api_receipts' AND column_name='request_json') THEN
+        ALTER TABLE pos_api_receipts DROP COLUMN request_json;
+      END IF;
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pos_api_receipts' AND column_name='response_json') THEN
+        ALTER TABLE pos_api_receipts DROP COLUMN response_json;
+      END IF;
+    END $$;
+  `);
+
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_receipts_order_id ON pos_api_receipts(order_id);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_receipts_merchant_tin ON pos_api_receipts(merchant_tin);`,
+    );
+    await p.query(
+      `CREATE INDEX IF NOT EXISTS idx_pos_receipts_ebarimt_id ON pos_api_receipts(ebarimt_id);`,
+    );
+
+    isDbConnected = true;
+    console.log("Database tables initialized successfully");
+  } catch (error) {
+    isDbConnected = false;
+    console.error("Failed to initialize database:", error);
+
+    if (error instanceof Error) {
+      if (error.message.includes("does not exist")) {
+        throw new Error(
+          "Database does not exist. Please create the database first:\n" +
+            "CREATE DATABASE posapi;",
+        );
+      } else if (error.message.includes("connection")) {
+        throw new Error(
+          "Cannot connect to PostgreSQL. Please check if PostgreSQL is running and connection string is correct.\n" +
+            `Connection string: ${process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/posapi"}`,
+        );
+      }
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -140,6 +236,10 @@ export async function saveOrderLog(
   orderId: string,
   merchantTin: string,
 ): Promise<void> {
+  if (!isDbConnected) {
+    throw new Error("Database is not connected. Cannot save order log.");
+  }
+
   const id: string = apiResult?.id ?? "";
   const rawDate: string | number | Date = apiResult?.date ?? new Date();
   const dateIso = toIso(rawDate);
@@ -148,9 +248,10 @@ export async function saveOrderLog(
   const message = "Successfully submitted to POS";
   const errorCode: string | null = null;
 
-  const p = getPool();
-  await p.query(
-    `
+  try {
+    const p = getPool();
+    await p.query(
+      `
     INSERT INTO pos_api_logs (order_id, id, date, merchant_tin, success, message, error_code)
     VALUES ($1, $2, $3, $4, $5, $6, $7)
     ON CONFLICT(order_id, merchant_tin) DO UPDATE SET
@@ -162,8 +263,14 @@ export async function saveOrderLog(
       error_code  = EXCLUDED.error_code,
       updated_at  = NOW()
     `,
-    [orderId, id, dateIso, merchantTin ?? "", success, message, errorCode],
-  );
+      [orderId, id, dateIso, merchantTin ?? "", success, message, errorCode],
+    );
+  } catch (error) {
+    console.error("Failed to save order log:", error);
+    throw new Error(
+      `Database error while saving order log: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
 }
 
 /** Find order log by orderId + merchantTin (preferred) */
@@ -171,28 +278,38 @@ export async function findLogByOrderIdAndTin(
   orderId: string,
   merchantTin: string,
 ): Promise<PosApiLog | null> {
-  const p = getPool();
-  const result = await p.query(
-    `
+  if (!isDbConnected) {
+    console.warn("Database is not connected. Returning null.");
+    return null;
+  }
+
+  try {
+    const p = getPool();
+    const result = await p.query(
+      `
      SELECT order_id, id, date, merchant_tin, success, message, error_code, created_at, updated_at
      FROM pos_api_logs
      WHERE order_id = $1 AND merchant_tin = $2
     `,
-    [orderId, merchantTin ?? ""],
-  );
-  const row = result.rows[0];
-  if (!row) return null;
-  return {
-    orderId: row.order_id,
-    id: row.id,
-    date: new Date(row.date),
-    merchantTin: row.merchant_tin ?? "",
-    success: row.success,
-    message: row.message,
-    errorCode: row.error_code,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+      [orderId, merchantTin ?? ""],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      orderId: row.order_id,
+      id: row.id,
+      date: new Date(row.date),
+      merchantTin: row.merchant_tin ?? "",
+      success: row.success,
+      message: row.message,
+      errorCode: row.error_code,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  } catch (error) {
+    console.error("Failed to find log by order ID and TIN:", error);
+    return null;
+  }
 }
 
 /**
@@ -317,21 +434,31 @@ function toIso(d: Date | string | number): string {
 }
 
 export async function getPosApiSettings(): Promise<PosApiSettings | null> {
-  const p = getPool();
-  const result = await p.query(
-    `SELECT merchant_tin, pos_no, district_code, branch_no, bill_id_suffix, updated_at
-     FROM pos_api_settings ORDER BY updated_at DESC LIMIT 1`,
-  );
-  const row = result.rows[0];
-  if (!row) return null;
-  return {
-    merchantTin: row.merchant_tin,
-    posNo: row.pos_no,
-    districtCode: row.district_code,
-    branchNo: row.branch_no,
-    billIdSuffix: row.bill_id_suffix,
-    updatedAt: row.updated_at,
-  };
+  if (!isDbConnected) {
+    console.warn("Database is not connected. Returning null.");
+    return null;
+  }
+
+  try {
+    const p = getPool();
+    const result = await p.query(
+      `SELECT merchant_tin, pos_no, district_code, branch_no, bill_id_suffix, updated_at
+       FROM pos_api_settings ORDER BY updated_at DESC LIMIT 1`,
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      merchantTin: row.merchant_tin,
+      posNo: row.pos_no,
+      districtCode: row.district_code,
+      branchNo: row.branch_no,
+      billIdSuffix: row.bill_id_suffix,
+      updatedAt: row.updated_at,
+    };
+  } catch (error) {
+    console.error("Failed to get POS API settings:", error);
+    return null;
+  }
 }
 
 export async function getPosApiSettingsByTin(
@@ -407,14 +534,16 @@ export interface SaveReceiptInput {
   response: DirectBillResponse | null;
   success: boolean;
   errorMessage?: string | null;
+  // Response-ээс авах field-үүд
+  responseStatus?: string | null;
+  responseMessage?: string | null;
+  responseDate?: string | null;
 }
 
 export interface ReceiptRecord {
   id: number;
   orderId: string;
   merchantTin: string;
-  requestJson: DirectBillRequest;
-  responseJson: DirectBillResponse | null;
   ebarimtId: string | null;
   totalAmount: number;
   totalVat: number;
@@ -422,6 +551,10 @@ export interface ReceiptRecord {
   receiptType: string;
   success: boolean;
   errorMessage: string | null;
+  // Response fields
+  responseStatus: string | null;
+  responseMessage: string | null;
+  responseDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -430,46 +563,70 @@ export interface ReceiptRecord {
  * Receipt хадгалах (upsert)
  */
 export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
-  const p = getPool();
+  if (!isDbConnected) {
+    throw new Error("Database is not connected. Cannot save receipt.");
+  }
 
-  const ebarimtId = input.response?.id ?? null;
-  const totalAmount = input.request.totalAmount ?? 0;
-  const totalVat = input.request.totalVAT ?? 0;
-  const totalCityTax = input.request.totalCityTax ?? 0;
-  const receiptType = input.request.type ?? "";
+  try {
+    const p = getPool();
 
-  await p.query(
-    `
+    const ebarimtId = input.response?.id ?? null;
+    const totalAmount = input.request.totalAmount ?? 0;
+    const totalVat = input.request.totalVAT ?? 0;
+    const totalCityTax = input.request.totalCityTax ?? 0;
+    const receiptType = input.request.type ?? "";
+
+    // Response-ээс авах field-үүд
+    const responseStatus =
+      input.responseStatus ?? input.response?.status ?? null;
+    const responseMessage =
+      input.responseMessage ?? input.response?.message ?? null;
+    const responseDate = input.responseDate ?? input.response?.date ?? null;
+
+    await p.query(
+      `
     INSERT INTO pos_api_receipts (
       order_id, merchant_tin, 
       ebarimt_id, 
-      success, error_message
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message,
+      response_status, response_message, response_date
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     ON CONFLICT(order_id, merchant_tin) DO UPDATE SET
-      ebarimt_id     = EXCLUDED.ebarimt_id,
-      total_amount   = EXCLUDED.total_amount,
-      total_vat      = EXCLUDED.total_vat,
-      total_city_tax = EXCLUDED.total_city_tax,
-      receipt_type   = EXCLUDED.receipt_type,
-      success        = EXCLUDED.success,
-      error_message  = EXCLUDED.error_message,
-      updated_at     = NOW()
+      ebarimt_id       = EXCLUDED.ebarimt_id,
+      total_amount     = EXCLUDED.total_amount,
+      total_vat        = EXCLUDED.total_vat,
+      total_city_tax   = EXCLUDED.total_city_tax,
+      receipt_type     = EXCLUDED.receipt_type,
+      success          = EXCLUDED.success,
+      error_message    = EXCLUDED.error_message,
+      response_status  = EXCLUDED.response_status,
+      response_message = EXCLUDED.response_message,
+      response_date    = EXCLUDED.response_date,
+      updated_at       = NOW()
     `,
-    [
-      input.orderId,
-      input.merchantTin,
-      JSON.stringify(input.request),
-      input.response ? JSON.stringify(input.response) : null,
-      ebarimtId,
-      totalAmount,
-      totalVat,
-      totalCityTax,
-      receiptType,
-      input.success,
-      input.errorMessage ?? null,
-    ],
-  );
+      [
+        input.orderId,
+        input.merchantTin,
+        ebarimtId,
+        totalAmount,
+        totalVat,
+        totalCityTax,
+        receiptType,
+        input.success,
+        input.errorMessage ?? null,
+        responseStatus,
+        responseMessage,
+        responseDate ? new Date(responseDate) : null,
+      ],
+    );
+  } catch (error) {
+    console.error("Failed to save receipt:", error);
+    throw new Error(
+      `Database error while saving receipt: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
 }
 
 /**
@@ -483,10 +640,12 @@ export async function findReceiptByOrderId(
   const result = await p.query(
     `
     SELECT 
-      id, order_id, merchant_tin, request_json, response_json,
+      id, order_id, merchant_tin,
       ebarimt_id,
       total_amount, total_vat, total_city_tax, receipt_type,
-      success, error_message, created_at, updated_at
+      success, error_message,
+      response_status, response_message, response_date,
+      created_at, updated_at
     FROM pos_api_receipts
     WHERE order_id = $1 AND merchant_tin = $2
     `,
@@ -500,8 +659,6 @@ export async function findReceiptByOrderId(
     id: row.id,
     orderId: row.order_id,
     merchantTin: row.merchant_tin,
-    requestJson: row.request_json,
-    responseJson: row.response_json,
     ebarimtId: row.ebarimt_id,
     totalAmount: parseFloat(row.total_amount),
     totalVat: parseFloat(row.total_vat),
@@ -509,6 +666,9 @@ export async function findReceiptByOrderId(
     receiptType: row.receipt_type,
     success: row.success,
     errorMessage: row.error_message,
+    responseStatus: row.response_status,
+    responseMessage: row.response_message,
+    responseDate: row.response_date ? new Date(row.response_date) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -524,10 +684,12 @@ export async function findReceiptByOrderIdOnly(
   const result = await p.query(
     `
     SELECT 
-      id, order_id, merchant_tin, request_json, response_json,
+      id, order_id, merchant_tin,
       ebarimt_id, 
       total_amount, total_vat, total_city_tax, receipt_type,
-      success, error_message, created_at, updated_at
+      success, error_message,
+      response_status, response_message, response_date,
+      created_at, updated_at
     FROM pos_api_receipts
     WHERE order_id = $1
     ORDER BY updated_at DESC
@@ -543,8 +705,6 @@ export async function findReceiptByOrderIdOnly(
     id: row.id,
     orderId: row.order_id,
     merchantTin: row.merchant_tin,
-    requestJson: row.request_json,
-    responseJson: row.response_json,
     ebarimtId: row.ebarimt_id,
     totalAmount: parseFloat(row.total_amount),
     totalVat: parseFloat(row.total_vat),
@@ -552,6 +712,9 @@ export async function findReceiptByOrderIdOnly(
     receiptType: row.receipt_type,
     success: row.success,
     errorMessage: row.error_message,
+    responseStatus: row.response_status,
+    responseMessage: row.response_message,
+    responseDate: row.response_date ? new Date(row.response_date) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
