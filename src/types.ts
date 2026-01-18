@@ -148,6 +148,7 @@ export interface DirectBillResponse {
   payments: DirectPayment[];
   posId: number;
   status: "SUCCESS" | "ERROR" | "PAYMENT";
+  message?: string; // ST-Ebarimt-ээс ирэх алдааны мессеж
   qrData: string;
   lottery: string;
   date: string;
@@ -169,4 +170,58 @@ export interface DirectReceiptResponse {
 export interface DeleteBillRequest {
   orderId: string;
   merchantTin: string;
+}
+
+// ========== Input Bill Types (Frontend-ээс татвар тооцоологүй ирэх) ==========
+
+/**
+ * Frontend-ээс ирэх request (татвар тооцоологүй)
+ * Бидний код дотроо татвар тооцоолно
+ */
+export interface InputBillRequest {
+  orderId: string;
+  type: EReceiptType | string;
+  merchantTin: string;
+  posNo: string;
+  districtCode: string;
+  branchNo: string;
+
+  // Optional
+  customerTin?: string;
+  consumerNo?: string;
+  inactiveId?: string;
+  reportMonth?: string;
+  invoiceId?: string;
+  billIdSuffix?: string;
+
+  // Receipts (taxType-аар бүлэглэсэн)
+  receipts: InputReceipt[];
+
+  // Payments
+  payments: InputPayment[];
+}
+
+export interface InputReceipt {
+  taxType: EVAT | string;
+  merchantTin: string;
+  items: InputItem[];
+  customerTin?: string;
+  bankAccountNo?: string;
+}
+
+export interface InputItem {
+  name: string;
+  barCode: string;
+  classificationCode: string;
+  measureUnit: string;
+  qty: number;
+  totalAmount: number; // Татвартай нийт үнэ (frontend-ээс)
+  isNhat: boolean; // НХАТ эсэх
+  taxProductCode?: string;
+}
+
+export interface InputPayment {
+  code: string; // CASH | PAYMENT_CARD | BONUS_CARD_TEST | EMD | BANK_TRANSFER
+  status: string; // PAID | PAY | REVERSED | ERROR
+  paidAmount: number;
 }
