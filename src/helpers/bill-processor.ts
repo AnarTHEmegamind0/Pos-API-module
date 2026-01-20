@@ -1,5 +1,8 @@
 // src/helpers/bill-processor.ts
 
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import type {
   InputBillRequest,
   InputReceipt,
@@ -27,12 +30,47 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+// OAT lookup - lazy load
+let oatMap: Map<string, string> | null = null;
+
+function getClassificationCode(barcode: string, isNhat: boolean): string {
+  const DEFAULT_CODE = "1410101";
+
+  if (!isNhat) return DEFAULT_CODE;
+  if (!barcode) return DEFAULT_CODE;
+
+  // Lazy load oat.json
+  if (!oatMap) {
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const oatPath = join(__dirname, "../oat.json");
+      console.log("[OAT] Loading from:", oatPath);
+      const raw = readFileSync(oatPath, "utf-8");
+      const oatData = JSON.parse(raw);
+      oatMap = new Map();
+      for (const p of oatData.data || []) {
+        if (p.barcode && p.classificationCode) {
+          oatMap.set(p.barcode, p.classificationCode);
+        }
+      }
+      console.log("[OAT] Loaded", oatMap.size, "products");
+    } catch (e) {
+      console.error("[OAT] Error loading:", e);
+      oatMap = new Map();
+    }
+  }
+
+  return oatMap.get(barcode) || DEFAULT_CODE;
+}
+
 /**
  * Frontend-ийн request-ийг боловсруулах
  *
  * - Item бүрт татвар тооцоолох (VAT, НХАТ)
  * - barCodeType тодорхойлох
  * - unitPrice тооцоолох
+ * - ClassificationCode нэмэх
  * - Receipt нийлбэр тооцоолох
  * - Root level нийлбэр тооцоолох
  * - Payment validation хийх
@@ -230,7 +268,7 @@ function processItem(
     name: inputItem.name,
     barCode: inputItem.barCode || "",
     barCodeType: barCodeType,
-    classificationCode: inputItem.classificationCode || "",
+    classificationCode: getClassificationCode(inputItem.barCode || "", inputItem.isNhat ?? false),
     measureUnit: inputItem.measureUnit || "ш",
     qty: inputItem.qty,
     unitPrice: taxResult.unitPrice,
