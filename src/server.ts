@@ -2,6 +2,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cron from "node-cron";
 
 import { PosApiWrapper } from "./wrapper.js";
 import type {
@@ -335,4 +336,16 @@ const PORT = Number(process.env.PORT) || 4001;
 app.listen(PORT, () => {
   console.log(`POS Wrapper API running -> http://localhost:${PORT}`);
   console.log(`Base endpoint: http://localhost:${PORT}/posapi`);
+});
+// ========== DAILY SCHEDULED TASK TO SEND BILLS ==========
+cron.schedule('59 23 * * *', async () => {
+  console.log(' Өнөөдрийн бүх баримтийг Ebarimt луу баримт илгээж байна...');
+  try {
+    const result = await posapi.SEND_BILLS();
+    console.log(' Илгээсэн:', result);
+  } catch (err) {
+    console.error(' Алдаа:', err);
+  }
+}, {
+  timezone: 'Asia/Ulaanbaatar'
 });
