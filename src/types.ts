@@ -3,6 +3,7 @@ import { EReceiptType, EVAT } from "./enums.js";
 export type Result<T> = {
   message: string;
   success: boolean;
+  status?: 0 | 1;  // 1 = амжилттай, 0 = амжилтгүй
   data: T | null;
 };
 
@@ -168,8 +169,7 @@ export interface DirectReceiptResponse {
 // ========== Delete Bill Types ==========
 
 export interface DeleteBillRequest {
-  orderId: string;
-  merchantTin: string;
+  ebarimtId?: string;
 }
 
 // ========== Input Bill Types (Frontend-ээс татвар тооцоологүй ирэх) ==========

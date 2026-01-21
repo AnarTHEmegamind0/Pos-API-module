@@ -8,9 +8,8 @@ import type {
 } from "./types.js";
 import {
   saveReceipt,
-  findReceiptByOrderId,
-  findReceiptByOrderIdOnly,
-  type ReceiptRecord,
+  findReceiptByEbarimtId,
+  saveReturnBillLog,
 } from "./db.js";
 
 export interface PosApiDependencies {
@@ -32,7 +31,7 @@ export class PosApiWrapper {
     if (!orderId) {
       const msg = "orderId is required";
       this.deps.notifyError?.(`POS API error: ${msg}`);
-      return { success: false, message: msg, data: null };
+      return { success: false, status: 0, message: msg, data: null };
     }
 
     console.log(
@@ -72,6 +71,7 @@ export class PosApiWrapper {
       // Response-д orderId нэмж буцаах
       return {
         success: true,
+        status: 1,
         message: result.message,
         data: { ...responseData, orderId },
       };
@@ -84,6 +84,7 @@ export class PosApiWrapper {
       this.deps.notifyError?.(`POS API error: ${errorMsg}`);
       return {
         success: false,
+        status: 0,
         message: errorMsg,
         data: responseData ? { ...responseData, orderId } : null,
       };
@@ -94,44 +95,60 @@ export class PosApiWrapper {
    * DELETE_BILL - Баримт буцаах/устгах
    */
   async DELETE_BILL(request: DeleteBillRequest): Promise<Result<string>> {
-    const { orderId, merchantTin } = request;
+    const { ebarimtId } = request;
 
-    if (!orderId || !merchantTin) {
-      const msg = "orderId and merchantTin are required";
+    if (!ebarimtId) {
+      const msg = "ДДТД is required";
       this.deps.notifyError?.(`POS API error: ${msg}`);
-      return { success: false, message: msg, data: null };
+      return { success: false, status: 0, message: msg, data: null };
     }
 
-    // DB-ээс хуучин баримт хайх
-    let receipt: ReceiptRecord | null = null;
-    if (merchantTin) {
-      receipt = await findReceiptByOrderId(orderId, merchantTin);
-    } else {
-      receipt = await findReceiptByOrderIdOnly(orderId);
-    }
+    // DB-ээс баримт хайх
+    const receipt = await findReceiptByEbarimtId(ebarimtId);
 
     if (!receipt || !receipt.ebarimtId) {
-      const msg = `No existing bill found for OrderId: ${orderId} (merchantTin=${merchantTin})`;
+      const msg = `No existing bill found for ebarimtId: ${ebarimtId}`;
       this.deps.notifyError?.(`POS API error: ${msg}`);
-      return { success: false, message: msg, data: null };
+      return { success: false, status: 0, message: msg, data: null };
     }
 
-    // responseDate-ийг ашиглах, эсвэл одоогийн огноо
-    const deleteDate = receipt.responseDate
-      ? receipt.responseDate.toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0];
+    // responseDate-ийг ашиглах, эсвэл одоогийн огноо (format: "yyyy-MM-dd HH:mm:ss")
+    const formatDate = (d: Date) => {
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+    const deleteDate = formatDate(receipt.responseDate ?? new Date());
 
+    // ST-Ebarimt руу DELETE илгээх
     const result = await Client.deleteData(receipt.ebarimtId, deleteDate);
 
+    // Амжилттай болсны дараа pos_api_return_logs-д хадгалах
     if (result.success) {
+      await saveReturnBillLog(
+        {
+          orderId: receipt.orderId,
+          id: receipt.ebarimtId,
+          date: receipt.responseDate ?? new Date(),
+          merchantTin: receipt.merchantTin,
+          success: true,
+          message: "",
+        },
+        receipt.orderId,
+        result.message,
+        {
+          success: result.success,
+          returnDate: new Date(),
+        },
+      );
+
       console.log(
-        `[deleteBill] Success - OrderId: ${orderId}, EbarimtId: ${receipt.ebarimtId}`,
+        `[deleteBill] Success - OrderId: ${receipt.orderId}, EbarimtId: ${receipt.ebarimtId}`,
       );
     } else {
       this.deps.notifyError?.(`POS API error: ${result.message}`);
     }
 
-    return result;
+    return { ...result, status: result.success ? 1 : 0 };
   }
 
   /**

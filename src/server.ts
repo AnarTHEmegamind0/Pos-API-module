@@ -16,6 +16,8 @@ import {
   initDb,
   findReceiptByOrderId,
   findReceiptByOrderIdOnly,
+  findReceiptByEbarimtId,
+  saveUpdateBillLog,
 } from "./db.js";
 
 // Bill processor helper
@@ -90,6 +92,7 @@ app.post("/posapi/addBill", async (req, res) => {
         );
         return res.status(409).json({
           success: false,
+          status: 0,
           duplicate: true,
           existingBill: dupCheck.existingBill,
           message: "ID давхцаж байна. Хамаагүй юу?",
@@ -122,6 +125,7 @@ app.post("/posapi/addBill", async (req, res) => {
       console.error("[addBill] Process error:", processResult.message);
       return res.status(400).json({
         success: false,
+        status: 0,
         message: processResult.message,
         data: null,
       });
@@ -149,6 +153,7 @@ app.post("/posapi/addBill", async (req, res) => {
     console.error("[addBill] Exception:", err);
     return res.status(500).json({
       success: false,
+      status: 0,
       message: err?.message ?? "Failed to add bill",
       data: null,
     });
@@ -156,9 +161,10 @@ app.post("/posapi/addBill", async (req, res) => {
 });
 
 // ========== UPDATE BILL ==========
+// Input: { ebarimtId: string, ...шинэ InputBillRequest (orderId-гүй байж болно) }
 app.post("/posapi/updateBill", async (req, res) => {
   try {
-    const payload = req.body as InputBillRequest;
+    const payload = req.body as InputBillRequest & { ebarimtId?: string };
 
     // === CONSOLE LOG: Ирсэн payload ===
     console.log(
@@ -166,16 +172,41 @@ app.post("/posapi/updateBill", async (req, res) => {
       JSON.stringify(payload, null, 2),
     );
 
-    const { orderId, merchantTin } = payload;
+    const { ebarimtId } = payload;
 
-    // Validation
-    if (!orderId) {
-      console.error("[updateBill] Error: orderId is required");
+    // Validation: ebarimtId эсвэл orderId байх ёстой
+    if (!ebarimtId && !payload.orderId) {
+      console.error("[updateBill] Error: ebarimtId or orderId is required");
       return res.status(400).json({
         success: false,
-        message: "orderId is required",
+        status: 0,
+        message: "ebarimtId or orderId is required",
         data: null,
       });
+    }
+
+    // ebarimtId-аар хуучин баримт хайх
+    let existingReceipt = null;
+    if (ebarimtId) {
+      existingReceipt = await findReceiptByEbarimtId(ebarimtId);
+      if (!existingReceipt) {
+        console.error("[updateBill] Error: No existing bill found for ebarimtId:", ebarimtId);
+        return res.status(404).json({
+          success: false,
+          status: 0,
+          message: `No existing bill found for ebarimtId: ${ebarimtId}`,
+          data: null,
+        });
+      }
+      // Хуучин баримтын orderId, merchantTin-ийг payload-д нэмэх
+      if (!payload.orderId) {
+        payload.orderId = existingReceipt.orderId;
+      }
+      if (!payload.merchantTin) {
+        payload.merchantTin = existingReceipt.merchantTin;
+      }
+      // inactiveId тохируулах
+      payload.inactiveId = ebarimtId;
     }
 
     // Татвар тооцоолж, бүрэн формат үүсгэх
@@ -185,6 +216,7 @@ app.post("/posapi/updateBill", async (req, res) => {
       console.error("[updateBill] Process error:", processResult.message);
       return res.status(400).json({
         success: false,
+        status: 0,
         message: processResult.message,
         data: null,
       });
@@ -192,29 +224,25 @@ app.post("/posapi/updateBill", async (req, res) => {
 
     const billRequest = processResult.data;
 
-    // Хуучин баримт хайх
+    // orderId-аар хайсан тохиолдолд (ebarimtId байхгүй үед)
     if (!billRequest.inactiveId) {
       let existing = null;
-      if (merchantTin) {
-        existing = await findReceiptByOrderId(orderId, merchantTin);
+      if (payload.merchantTin) {
+        existing = await findReceiptByOrderId(payload.orderId, payload.merchantTin);
       } else {
-        existing = await findReceiptByOrderIdOnly(orderId);
+        existing = await findReceiptByOrderIdOnly(payload.orderId);
       }
 
       if (!existing?.ebarimtId) {
-        console.error(
-          "[updateBill] Error: No existing bill found for OrderId:",
-          orderId,
-        );
+        console.error("[updateBill] Error: No existing bill found for OrderId:", payload.orderId);
         return res.status(404).json({
           success: false,
-          message:
-            "No existing bill found for provided OrderId; cannot perform update.",
+          status: 0,
+          message: "No existing bill found for provided OrderId; cannot perform update.",
           data: null,
         });
       }
 
-      // inactiveId-г хуучин баримтын ID-аар тохируулах
       billRequest.inactiveId = existing.ebarimtId;
     }
 
@@ -233,11 +261,26 @@ app.post("/posapi/updateBill", async (req, res) => {
       JSON.stringify(result, null, 2),
     );
 
+    // Амжилттай болсны дараа pos_api_update_logs-д хадгалах
+    if (result.success && billRequest.inactiveId && result.data?.id) {
+      await saveUpdateBillLog({
+        orderId: billRequest.orderId,
+        oldId: billRequest.inactiveId,
+        newId: result.data.id,
+        date: new Date(),
+        merchantTin: billRequest.merchantTin,
+      });
+      console.log(
+        `[updateBill] Log saved - OldId: ${billRequest.inactiveId}, NewId: ${result.data.id}`,
+      );
+    }
+
     return res.json(result);
   } catch (err: any) {
     console.error("[updateBill] Exception:", err);
     return res.status(500).json({
       success: false,
+      status: 0,
       message: err?.message ?? "Failed to update bill",
       data: null,
     });
@@ -249,18 +292,11 @@ app.post("/posapi/deleteBill", async (req, res) => {
   try {
     const payload = req.body as DeleteBillRequest;
 
-    if (!payload.orderId) {
+    if (!payload.ebarimtId) {
       return res.status(400).json({
         success: false,
-        message: "orderId is required",
-        data: null,
-      });
-    }
-
-    if (!payload.merchantTin) {
-      return res.status(400).json({
-        success: false,
-        message: "merchantTin is required",
+        status: 0,
+        message: "ДДТД is required",
         data: null,
       });
     }
@@ -270,6 +306,7 @@ app.post("/posapi/deleteBill", async (req, res) => {
   } catch (err: any) {
     return res.status(500).json({
       success: false,
+      status: 0,
       message: err?.message ?? "Failed to delete bill",
       data: null,
     });

@@ -628,10 +628,90 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
     );
   }
 }
+export async function findReceiptByEbarimtId(
+  ebarimtId: string,
+) : Promise<ReceiptRecord | null> {
+  const p = getPool();
+  const result = await p.query(
+       `
+    SELECT
+      id, order_id, merchant_tin,
+      ebarimt_id,
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message,
+      response_status, response_message, response_date,
+      created_at, updated_at
+    FROM pos_api_receipts
+    WHERE ebarimt_id = $1
+    `,
+    [ebarimtId],
+  );
+
+   const row = result.rows[0];
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    merchantTin: row.merchant_tin,
+    ebarimtId: row.ebarimt_id,
+    totalAmount: parseFloat(row.total_amount),
+    totalVat: parseFloat(row.total_vat),
+    totalCityTax: parseFloat(row.total_city_tax),
+    receiptType: row.receipt_type,
+    success: row.success,
+    errorMessage: row.error_message,
+    responseStatus: row.response_status,
+    responseMessage: row.response_message,
+    responseDate: row.response_date ? new Date(row.response_date) : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function findAllReceiptsByEbarimtId(
+  ebarimtId: string,
+): Promise<ReceiptRecord[]> {
+  const p = getPool();
+  const result = await p.query(
+    `
+    SELECT
+      id, order_id, merchant_tin,
+      ebarimt_id,
+      total_amount, total_vat, total_city_tax, receipt_type,
+      success, error_message,
+      response_status, response_message, response_date,
+      created_at, updated_at
+    FROM pos_api_receipts
+    WHERE ebarimt_id = $1
+    `,
+    [ebarimtId],
+  );
+
+  return result.rows.map((row: any) => ({
+    id: row.id,
+    orderId: row.order_id,
+    merchantTin: row.merchant_tin,
+    ebarimtId: row.ebarimt_id,
+    totalAmount: parseFloat(row.total_amount),
+    totalVat: parseFloat(row.total_vat),
+    totalCityTax: parseFloat(row.total_city_tax),
+    receiptType: row.receipt_type,
+    success: row.success,
+    errorMessage: row.error_message,
+    responseStatus: row.response_status,
+    responseMessage: row.response_message,
+    responseDate: row.response_date ? new Date(row.response_date) : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
 
 /**
  * Receipt хайх (orderId + merchantTin)
  */
+
+
 export async function findReceiptByOrderId(
   orderId: string,
   merchantTin: string,
