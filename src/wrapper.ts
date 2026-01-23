@@ -151,9 +151,6 @@ export class PosApiWrapper {
     return { ...result, status: result.success ? 1 : 0 };
   }
 
-  /**
-   * SEND_BILLS - Бүх pending баримтуудыг илгээх
-   */
   async SEND_BILLS(): Promise<Result<string>> {
     const result = await Client.sendData();
     if (!result.success) {

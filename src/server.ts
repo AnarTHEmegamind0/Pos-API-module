@@ -50,6 +50,8 @@ app.use(
       "http://127.0.0.1:3000",
       "https://posapi.itsystem.mn", // Production
       "http://posapi.itsystem.mn",
+      "http://erp.itsystem.mn",
+      "https://erp.itsystem.mn",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
