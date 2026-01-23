@@ -433,6 +433,16 @@ function toIso(d: Date | string | number): string {
   return date.toISOString();
 }
 
+/**
+ * ST-Ebarimt-ийн date-г Монголын цаг (UTC+8) гэж тооцож Date объект үүсгэх
+ * Жишээ: "2026-01-23 03:45:28" -> Date (UTC+8 гэж тооцно)
+ */
+function parseAsUlaanbaatarTime(dateStr: string): Date {
+  // "2026-01-23 03:45:28" форматыг "+08:00" timezone-тэй болгох
+  const normalized = dateStr.replace(" ", "T") + "+08:00";
+  return new Date(normalized);
+}
+
 export async function getPosApiSettings(): Promise<PosApiSettings | null> {
   if (!isDbConnected) {
     console.warn("Database is not connected. Returning null.");
@@ -618,7 +628,7 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
         input.errorMessage ?? null,
         responseStatus,
         responseMessage,
-        responseDate ? new Date(responseDate) : null,
+        responseDate ? parseAsUlaanbaatarTime(responseDate) : null,
       ],
     );
   } catch (error) {
@@ -630,10 +640,10 @@ export async function saveReceipt(input: SaveReceiptInput): Promise<void> {
 }
 export async function findReceiptByEbarimtId(
   ebarimtId: string,
-) : Promise<ReceiptRecord | null> {
+): Promise<ReceiptRecord | null> {
   const p = getPool();
   const result = await p.query(
-       `
+    `
     SELECT
       id, order_id, merchant_tin,
       ebarimt_id,
@@ -647,7 +657,7 @@ export async function findReceiptByEbarimtId(
     [ebarimtId],
   );
 
-   const row = result.rows[0];
+  const row = result.rows[0];
   if (!row) return null;
 
   return {
@@ -710,7 +720,6 @@ export async function findAllReceiptsByEbarimtId(
 /**
  * Receipt хайх (orderId + merchantTin)
  */
-
 
 export async function findReceiptByOrderId(
   orderId: string,
