@@ -48,6 +48,18 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     return { success: false, message: "merchantTin шаардлагатай" };
   }
 
+  if (!input.posNo) {
+    return { success: false, message: "posNo шаардлагатай" };
+  }
+
+  if (!input.districtCode) {
+    return { success: false, message: "districtCode шаардлагатай" };
+  }
+
+  if (!input.branchNo) {
+    return { success: false, message: "branchNo шаардлагатай" };
+  }
+
   if (!input.receipts || input.receipts.length === 0) {
     return { success: false, message: "receipts хоосон байна" };
   }
@@ -175,10 +187,10 @@ function processReceipt(
 
   // ST-Ebarimt-тай адил тооцоолол: Receipt нийт дүнгээр VAT/НХАТ дахин тооцоолох
   receiptTotalAmount = round2(receiptTotalAmount);
-  
+
   const isVatAble = inputReceipt.taxType === "VAT_ABLE";
-  const hasNhat = processedItems.some(item => item.totalCityTax > 0);
-  
+  const hasNhat = processedItems.some((item) => item.totalCityTax > 0);
+
   let divisor = 1;
   if (isVatAble && hasNhat) {
     divisor = 1.12; // 100% + 10% VAT + 2% НХАТ
@@ -187,7 +199,7 @@ function processReceipt(
   } else if (!isVatAble && hasNhat) {
     divisor = 1.02; // 100% + 2% НХАТ
   }
-  
+
   const baseAmount = round2(receiptTotalAmount / divisor);
   receiptTotalVAT = isVatAble ? round2(baseAmount * 0.1) : 0;
   // НХАТ-ыг item-үүдийн нийлбэр дээр үндэслэх (дахин тооцоолохгүй)
