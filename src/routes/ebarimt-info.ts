@@ -124,3 +124,75 @@ ebarimtInfoRouter.get("/info/product-tax-codes", async (_req, res) => {
     });
   }
 });
+
+/**
+ * GET /posapi/getTinInfo?regNo=2804425
+ * proxies → https://api.ebarimt.mn/api/info/check/getTinInfo?regNo=2804425
+ * Frontend-ээс 7 оронтой регистрийн дугаар авч TIN буцаана
+ */
+ebarimtInfoRouter.get("/getTinInfo", async (req, res) => {
+  try {
+    const { regNo } = req.query;
+    
+    if (!regNo || typeof regNo !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "regNo is required",
+      });
+    }
+
+    // 7 оронтой тоо эсэхийг шалгах
+    if (!/^\d{7}$/.test(regNo)) {
+      return res.status(400).json({
+        success: false,
+        message: "regNo must be exactly 7 digits",
+      });
+    }
+
+    const data = await safeFetch<number>(
+      `${EBARIMT_BASE}/info/check/getTinInfo?regNo=${encodeURIComponent(regNo)}`
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to fetch TIN by regNo",
+    });
+  }
+});
+
+/**
+ * GET /posapi/getInfo?tin=64000839429
+ * proxies → https://api.ebarimt.mn/api/info/check/getInfo?tin=64000839429
+ * TIN дугаараар компанийн мэдээлэл авах
+ */
+ebarimtInfoRouter.get("/getInfo", async (req, res) => {
+  try {
+    const { tin } = req.query;
+    
+    if (!tin || typeof tin !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "tin is required",
+      });
+    }
+
+    const data = await safeFetch<any>(
+      `${EBARIMT_BASE}/info/check/getInfo?tin=${encodeURIComponent(tin)}`
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err?.message ?? "Failed to fetch info by TIN",
+    });
+  }
+});

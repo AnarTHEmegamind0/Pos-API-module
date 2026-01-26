@@ -1,8 +1,5 @@
 // src/helpers/bill-processor.ts
 
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import type {
   InputBillRequest,
   InputReceipt,
@@ -28,40 +25,6 @@ export type ProcessResult =
  */
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
-}
-
-// OAT lookup - lazy load
-let oatMap: Map<string, string> | null = null;
-
-function getClassificationCode(barcode: string, isNhat: boolean): string {
-  const DEFAULT_CODE = "1410101";
-
-  if (!isNhat) return DEFAULT_CODE;
-  if (!barcode) return DEFAULT_CODE;
-
-  // Lazy load oat.json
-  if (!oatMap) {
-    try {
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = dirname(__filename);
-      const oatPath = join(__dirname, "../oat.json");
-      console.log("[OAT] Loading from:", oatPath);
-      const raw = readFileSync(oatPath, "utf-8");
-      const oatData = JSON.parse(raw);
-      oatMap = new Map();
-      for (const p of oatData.data || []) {
-        if (p.barcode && p.classificationCode) {
-          oatMap.set(p.barcode, p.classificationCode);
-        }
-      }
-      console.log("[OAT] Loaded", oatMap.size, "products");
-    } catch (e) {
-      console.error("[OAT] Error loading:", e);
-      oatMap = new Map();
-    }
-  }
-
-  return oatMap.get(barcode) || DEFAULT_CODE;
 }
 
 /**
@@ -126,8 +89,10 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     rootTotalCityTax += receiptResult.data.totalCityTax;
   }
 
-  // Round root totals
+  // Root level дээр бөөрөнхийлөлт (зөвхөн totalAmount-г бөөрөнхийлнө)
   rootTotalAmount = round2(rootTotalAmount);
+  // VAT болон CityTax нь receipt-үүдээс аль хэдийн зөв тооцоологдсон, дахин бөөрөнхийлөхгүй
+  // Гэхдээ JavaScript-ийн floating point алдаа байж болно, тийм учраас бага зэрэг засна
   rootTotalVAT = round2(rootTotalVAT);
   rootTotalCityTax = round2(rootTotalCityTax);
 
@@ -208,12 +173,32 @@ function processReceipt(
     receiptTotalCityTax += itemResult.data.totalCityTax;
   }
 
+  // ST-Ebarimt-тай адил тооцоолол: Receipt нийт дүнгээр VAT/НХАТ дахин тооцоолох
+  receiptTotalAmount = round2(receiptTotalAmount);
+  
+  const isVatAble = inputReceipt.taxType === "VAT_ABLE";
+  const hasNhat = processedItems.some(item => item.totalCityTax > 0);
+  
+  let divisor = 1;
+  if (isVatAble && hasNhat) {
+    divisor = 1.12; // 100% + 10% VAT + 2% НХАТ
+  } else if (isVatAble && !hasNhat) {
+    divisor = 1.1; // 100% + 10% VAT
+  } else if (!isVatAble && hasNhat) {
+    divisor = 1.02; // 100% + 2% НХАТ
+  }
+  
+  const baseAmount = round2(receiptTotalAmount / divisor);
+  receiptTotalVAT = isVatAble ? round2(baseAmount * 0.1) : 0;
+  // НХАТ-ыг item-үүдийн нийлбэр дээр үндэслэх (дахин тооцоолохгүй)
+  receiptTotalCityTax = hasNhat ? round2(receiptTotalCityTax) : 0;
+
   const directReceipt: DirectReceipt = {
     taxType: inputReceipt.taxType,
     merchantTin: inputReceipt.merchantTin,
-    totalAmount: round2(receiptTotalAmount),
-    totalVAT: round2(receiptTotalVAT),
-    totalCityTax: round2(receiptTotalCityTax),
+    totalAmount: receiptTotalAmount,
+    totalVAT: receiptTotalVAT,
+    totalCityTax: receiptTotalCityTax,
     items: processedItems,
     customerTin: inputReceipt.customerTin || null,
     bankAccountNo: inputReceipt.bankAccountNo || null,
@@ -268,7 +253,7 @@ function processItem(
     name: inputItem.name,
     barCode: inputItem.barCode || "",
     barCodeType: barCodeType,
-    classificationCode: getClassificationCode(inputItem.barCode || "", inputItem.isNhat ?? false),
+    classificationCode: inputItem.classificationCode,
     measureUnit: inputItem.measureUnit || "ш",
     qty: inputItem.qty,
     unitPrice: taxResult.unitPrice,

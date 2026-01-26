@@ -12,6 +12,16 @@ import {
   saveReturnBillLog,
 } from "./db.js";
 
+/**
+ * UTC цагийг Улаанбаатарын цаг руу хөрвүүлэх (UTC+8)
+ */
+function toUlaanbaatarTime(utcDateStr: string): string {
+  const utcDate = new Date(utcDateStr.replace(" ", "T") + "Z");
+  const ub = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${ub.getUTCFullYear()}-${pad(ub.getUTCMonth() + 1)}-${pad(ub.getUTCDate())} ${pad(ub.getUTCHours())}:${pad(ub.getUTCMinutes())}:${pad(ub.getUTCSeconds())}`;
+}
+
 export interface PosApiDependencies {
   notifyError?: (msg: string) => void;
   notifySuccess?: (msg: string) => void;
@@ -68,12 +78,16 @@ export class PosApiWrapper {
       );
       this.deps.notifySuccess?.(`Bill created: ${orderId}`);
 
-      // Response-д orderId нэмж буцаах
+      // Response-д orderId нэмж, date-г Улаанбаатарын цагаар буцаах
       return {
         success: true,
         status: 1,
         message: result.message,
-        data: { ...responseData, orderId },
+        data: {
+          ...responseData,
+          date: toUlaanbaatarTime(responseData.date),
+          orderId,
+        },
       };
     } else {
       // Error message-ийг response-ээс авах
