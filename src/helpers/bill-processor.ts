@@ -84,8 +84,8 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
   // === Process receipts ===
   const processedReceipts: DirectReceipt[] = [];
   let rootTotalAmount = 0;
-  let rootTotalVAT = 0;
-  let rootTotalCityTax = 0;
+  let rawRootVat = 0;
+  let rawRootCityTax = 0;
 
   for (let i = 0; i < input.receipts.length; i++) {
     const inputReceipt = input.receipts[i];
@@ -97,14 +97,14 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
 
     processedReceipts.push(receiptResult.data);
     rootTotalAmount += receiptResult.data.totalAmount;
-    rootTotalVAT += receiptResult.data.totalVAT;
-    rootTotalCityTax += receiptResult.data.totalCityTax;
+    rawRootVat += receiptResult.rawVat;
+    rawRootCityTax += receiptResult.rawCityTax;
   }
 
-  // Root level: totalAmount-ыг round хийнэ
-  // VAT, CityTax-ыг round хийхгүй - receipts нийлбэрийг шууд ашиглах
-  // (receipt level дээр аль хэдийн round хийгдсэн)
+  // Root level: raw нийлбэр дээр 1 удаа round2 хийх (POSAPI шалгалттай тааруулна)
   rootTotalAmount = round2(rootTotalAmount);
+  const rootTotalVAT = round2(rawRootVat);
+  const rootTotalCityTax = round2(rawRootCityTax);
 
   // === Validate payments (Invoice биш үед) ===
   if (!isInvoice) {
@@ -150,7 +150,7 @@ function processReceipt(
   inputReceipt: InputReceipt,
   receiptIndex: number,
 ):
-  | { success: true; data: DirectReceipt }
+  | { success: true; data: DirectReceipt; rawVat: number; rawCityTax: number }
   | { success: false; message: string } {
   if (!inputReceipt.items || inputReceipt.items.length === 0) {
     return {
@@ -161,8 +161,8 @@ function processReceipt(
 
   const processedItems: DirectItem[] = [];
   let receiptTotalAmount = 0;
-  let receiptTotalVAT = 0;
-  let receiptTotalCityTax = 0;
+  let rawReceiptVat = 0;
+  let rawReceiptCityTax = 0;
 
   for (let i = 0; i < inputReceipt.items.length; i++) {
     const inputItem = inputReceipt.items[i];
@@ -179,14 +179,30 @@ function processReceipt(
 
     processedItems.push(itemResult.data);
     receiptTotalAmount += itemResult.data.totalAmount;
-    receiptTotalVAT += itemResult.data.totalVAT;
-    receiptTotalCityTax += itemResult.data.totalCityTax;
+
+    // ST-Ebarimt/POSAPI шалгалттай тааруулахын тулд receipt-ийн VAT/CityTax-ыг
+    // item-үүдийн raw (round хийгдээгүй) утгаар нь нийлүүлж байгаад төгсгөлд нь round2 хийнэ.
+    const isVatAble = inputReceipt.taxType === "VAT_ABLE";
+    const isNhat = inputItem.isNhat ?? false;
+
+    let divisor = 1;
+    if (isVatAble && isNhat) {
+      divisor = 1.12;
+    } else if (isVatAble && !isNhat) {
+      divisor = 1.1;
+    } else if (!isVatAble && isNhat) {
+      divisor = 1.02;
+    }
+
+    const baseAmount = inputItem.totalAmount / divisor;
+    rawReceiptVat += isVatAble ? baseAmount * 0.1 : 0;
+    rawReceiptCityTax += isNhat ? baseAmount * 0.02 : 0;
   }
 
-  // ST-Ebarimt-тай адил: Items нийлбэрийг шууд ашиглах (дахин тооцоолохгүй)
+  // Receipt түвшинд нэг удаа round2 хийх
   receiptTotalAmount = round2(receiptTotalAmount);
-  receiptTotalVAT = round2(receiptTotalVAT);
-  receiptTotalCityTax = round2(receiptTotalCityTax);
+  const receiptTotalVAT = round2(rawReceiptVat);
+  const receiptTotalCityTax = round2(rawReceiptCityTax);
 
   const directReceipt: DirectReceipt = {
     taxType: inputReceipt.taxType,
@@ -199,7 +215,12 @@ function processReceipt(
     bankAccountNo: inputReceipt.bankAccountNo || null,
   };
 
-  return { success: true, data: directReceipt };
+  return {
+    success: true,
+    data: directReceipt,
+    rawVat: rawReceiptVat,
+    rawCityTax: rawReceiptCityTax,
+  };
 }
 
 /**
