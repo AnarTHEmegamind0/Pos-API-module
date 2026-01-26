@@ -51,7 +51,8 @@ export function calculateItemTax(
   }
   // else divisor = 1 (татваргүй)
 
-  const baseAmount = round2(totalAmount / divisor);
+  // ST-Ebarimt-тай адил: baseAmount-ыг round хийхгүй, зөвхөн VAT/CityTax-ыг round хийнэ
+  const baseAmount = totalAmount / divisor;
   const vat = isVatAble ? round2(baseAmount * 0.1) : 0;
   const cityTax = isNhat ? round2(baseAmount * 0.02) : 0;
   const unitPrice = qty > 0 ? round2(totalAmount / qty) : 0;

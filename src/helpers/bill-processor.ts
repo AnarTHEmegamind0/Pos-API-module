@@ -101,12 +101,10 @@ export function processBillRequest(input: InputBillRequest): ProcessResult {
     rootTotalCityTax += receiptResult.data.totalCityTax;
   }
 
-  // Root level дээр бөөрөнхийлөлт (зөвхөн totalAmount-г бөөрөнхийлнө)
+  // Root level: totalAmount-ыг round хийнэ
+  // VAT, CityTax-ыг round хийхгүй - receipts нийлбэрийг шууд ашиглах
+  // (receipt level дээр аль хэдийн round хийгдсэн)
   rootTotalAmount = round2(rootTotalAmount);
-  // VAT болон CityTax нь receipt-үүдээс аль хэдийн зөв тооцоологдсон, дахин бөөрөнхийлөхгүй
-  // Гэхдээ JavaScript-ийн floating point алдаа байж болно, тийм учраас бага зэрэг засна
-  rootTotalVAT = round2(rootTotalVAT);
-  rootTotalCityTax = round2(rootTotalCityTax);
 
   // === Validate payments (Invoice биш үед) ===
   if (!isInvoice) {
@@ -185,25 +183,10 @@ function processReceipt(
     receiptTotalCityTax += itemResult.data.totalCityTax;
   }
 
-  // ST-Ebarimt-тай адил тооцоолол: Receipt нийт дүнгээр VAT/НХАТ дахин тооцоолох
+  // ST-Ebarimt-тай адил: Items нийлбэрийг шууд ашиглах (дахин тооцоолохгүй)
   receiptTotalAmount = round2(receiptTotalAmount);
-
-  const isVatAble = inputReceipt.taxType === "VAT_ABLE";
-  const hasNhat = processedItems.some((item) => item.totalCityTax > 0);
-
-  let divisor = 1;
-  if (isVatAble && hasNhat) {
-    divisor = 1.12; // 100% + 10% VAT + 2% НХАТ
-  } else if (isVatAble && !hasNhat) {
-    divisor = 1.1; // 100% + 10% VAT
-  } else if (!isVatAble && hasNhat) {
-    divisor = 1.02; // 100% + 2% НХАТ
-  }
-
-  const baseAmount = round2(receiptTotalAmount / divisor);
-  receiptTotalVAT = isVatAble ? round2(baseAmount * 0.1) : 0;
-  // НХАТ-ыг item-үүдийн нийлбэр дээр үндэслэх (дахин тооцоолохгүй)
-  receiptTotalCityTax = hasNhat ? round2(receiptTotalCityTax) : 0;
+  receiptTotalVAT = round2(receiptTotalVAT);
+  receiptTotalCityTax = round2(receiptTotalCityTax);
 
   const directReceipt: DirectReceipt = {
     taxType: inputReceipt.taxType,
