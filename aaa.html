@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS API 3.0 - Use Case Diagram</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            height: 700px;
+            border: 3px solid #3498db;
+            border-radius: 15px;
+            background: #e8f4f8;
+            overflow: hidden;
+        }
+        
+        .actor {
+            position: absolute;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .actor-figure {
+            width: 50px;
+            height: 80px;
+            margin: 0 auto 10px;
+        }
+        
+        .actor.left {
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .actor.right {
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .system-boundary {
+            position: absolute;
+            left: 150px;
+            right: 150px;
+            top: 50px;
+            bottom: 50px;
+            border: 3px solid #2c3e50;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        .system-title {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e8f4f8;
+            padding: 5px 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            border-radius: 20px;
+            border: 2px solid #2c3e50;
+        }
+        
+        .use-case {
+            position: absolute;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 13px;
+            text-align: center;
+            color: #2c3e50;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-width: 140px;
+        }
+        
+        .use-case:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            background: #ecf0f1;
+        }
+        
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .connection {
+            stroke: #34495e;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.6;
+        }
+        
+        .info-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .info-panel.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .info-content {
+            color: #34495e;
+            line-height: 1.6;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .legend-icon {
+            width: 30px;
+            height: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 POS API 3.0 - Use Case Диаграмм</h1>
+        
+        <div class="diagram-container" id="diagram">
+            <svg id="connections"></svg>
+            
+            <!-- Left Actor -->
+            <div class="actor left" data-actor="user">
+                <svg class="actor-figure" viewBox="0 0 50 80">
+                    <circle cx="25" cy="15" r="12" fill="#3498db"/>
+                    <rect x="17" y="30" width="16" height="25" fill="#3498db"/>
+                    <line x1="10" y1="45" x2="25" y2="35" stroke="#3498db" stroke-width="3"/>
+                    <line x1="40" y1="45" x2="25" y2="35" stroke="#3498db" stroke-width="3"/>
+                    <line x1="17" y1="55" x2="10" y2="75" stroke="#3498db" stroke-width="3"/>
+                    <line x1="33" y1="55" x2="40" y2="75" stroke="#3498db" stroke-width="3"/>
+                </svg>
+                <div>Хэрэглэгч</div>
+            </div>
+            
+            <!-- Right Actor -->
+            <div class="actor right" data-actor="admin">
+                <svg class="actor-figure" viewBox="0 0 50 80">
+                    <circle cx="25" cy="15" r="12" fill="#e74c3c"/>
+                    <rect x="17" y="30" width="16" height="25" fill="#e74c3c"/>
+                    <line x1="10" y1="45" x2="25" y2="35" stroke="#e74c3c" stroke-width="3"/>
+                    <line x1="40" y1="45" x2="25" y2="35" stroke="#e74c3c" stroke-width="3"/>
+                    <line x1="17" y1="55" x2="10" y2="75" stroke="#e74c3c" stroke-width="3"/>
+                    <line x1="33" y1="55" x2="40" y2="75" stroke="#e74c3c" stroke-width="3"/>
+                </svg>
+                <div>Админ</div>
+            </div>
+            
+            <!-- System Boundary -->
+            <div class="system-boundary">
+                <div class="system-title">POS API 3.0 Систем</div>
+            </div>
+            
+            <!-- Use Cases -->
+            <div class="use-case" style="left: 320px; top: 80px;" data-case="addBill">
+                Баримт үүсгэх<br>(addBill)
+            </div>
+            
+            <div class="use-case" style="left: 520px; top: 80px;" data-case="updateBill">
+                Баримт шинэчлэх<br>(updateBill)
+            </div>
+            
+            <div class="use-case" style="left: 720px; top: 80px;" data-case="deleteBill">
+                Баримт буцаах<br>(deleteBill)
+            </div>
+            
+            <div class="use-case" style="left: 320px; top: 200px;" data-case="receipt">
+                Баримт харах<br>(receipt)
+            </div>
+            
+            <div class="use-case" style="left: 520px; top: 200px;" data-case="logs">
+                Лог харах<br>(logs)
+            </div>
+            
+            <div class="use-case" style="left: 720px; top: 200px;" data-case="settings">
+                Тохиргоо<br>удирдах
+            </div>
+            
+            <div class="use-case" style="left: 320px; top: 320px;" data-case="sendBills">
+                Баримт илгээх<br>(sendBills)
+            </div>
+            
+            <div class="use-case" style="left: 520px; top: 320px;" data-case="info">
+                Ebarimt<br>мэдээлэл
+            </div>
+            
+            <div class="use-case" style="left: 720px; top: 320px;" data-case="tax">
+                Татвар<br>тооцоолох
+            </div>
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <div class="info-title" id="infoTitle"></div>
+            <div class="info-content" id="infoContent"></div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #3498db;"></div>
+                <span>Хэрэглэгчийн үйлдэл</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: #e74c3c;"></div>
+                <span>Админы үйлдэл</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="border: 2px solid #3498db; background: white;"></div>
+                <span>Use Case</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use case мэдээлэл
+        const useCaseInfo = {
+            addBill: {
+                title: '📝 Баримт үүсгэх (addBill)',
+                content: 'Шинэ цахим баримт үүсгэх. Давхардал шалгах, татвар тооцоолох, ST-Ebarimt системд илгээх үйлдлүүдийг гүйцэтгэнэ. Endpoint: POST /posapi/addBill'
+            },
+            updateBill: {
+                title: '🔄 Баримт шинэчлэх (updateBill)',
+                content: 'Өмнө нь үүссэн баримтын мэдээллийг шинэчлэх. ebarimtId эсвэл orderId шаардлагатай. Endpoint: POST /posapi/updateBill'
+            },
+            deleteBill: {
+                title: '🗑️ Баримт буцаах (deleteBill)',
+                content: 'Баримт буцаах/устгах үйлдэл. ebarimtId шаардлагатай. Буцаалтын лог хадгална. Endpoint: POST /posapi/deleteBill'
+            },
+            receipt: {
+                title: '👁️ Баримт харах (receipt)',
+                content: 'Захиалгын ID-аар баримтын дэлгэрэнгүй мэдээлэл харах. QR код, лотерийн дугаар зэрэг. Endpoint: GET /posapi/receipt/:orderId'
+            },
+            logs: {
+                title: '📊 Лог харах (logs)',
+                content: 'Баримтын лог, буцаалтын лог, шинэчлэлтийн лог, хариултын лог зэрэг бүх логуудыг харах. Pagination дэмжинэ.'
+            },
+            settings: {
+                title: '⚙️ Тохиргоо удирдах',
+                content: 'POS тохиргоо (merchantTin, posNo, districtCode гэх мэт) үүсгэх, шинэчлэх, устгах үйлдлүүд. Зөвхөн админд зөвшөөрөгдсөн.'
+            },
+            sendBills: {
+                title: '📤 Баримт илгээх (sendBills)',
+                content: 'Хүлээгдэж буй баримтуудыг ST-Ebarimt системд илгээх batch үйлдэл. Endpoint: POST /posapi/sendBills'
+            },
+            info: {
+                title: 'ℹ️ Ebarimt мэдээлэл',
+                content: 'ТЕГ-ын Ebarimt системээс салбар, TIN, бүтээгдэхүүний татварын код зэрэг мэдээлэл татах proxy endpoints.'
+            },
+            tax: {
+                title: '🧮 Татвар тооцоолох',
+                content: 'НӨАТ (10%) болон НХАТ (2%) татварыг автоматаар тооцоолж, баримтанд нэмэх. Татварын төрөл (VAT_ABLE, VAT_FREE, VAT_ZERO) ялган тооцоолно.'
+            }
+        };
+        
+        // Холболт зурах
+        function drawConnections() {
+            const svg = document.getElementById('connections');
+            const diagram = document.getElementById('diagram');
+            svg.innerHTML = '';
+            
+            const useCases = document.querySelectorAll('.use-case');
+            const userActor = document.querySelector('[data-actor="user"]');
+            const adminActor = document.querySelector('[data-actor="admin"]');
+            
+            // Хэрэглэгчийн холболтууд
+            const userCases = ['addBill', 'updateBill', 'deleteBill', 'receipt', 'sendBills', 'info', 'tax'];
+            userCases.forEach(caseId => {
+                const useCase = document.querySelector(`[data-case="${caseId}"]`);
+                if (useCase) {
+                    drawLine(svg, userActor, useCase, '#3498db');
+                }
+            });
+            
+            // Админы холболтууд
+            const adminCases = ['logs', 'settings', 'info'];
+            adminCases.forEach(caseId => {
+                const useCase = document.querySelector(`[data-case="${caseId}"]`);
+                if (useCase) {
+                    drawLine(svg, adminActor, useCase, '#e74c3c');
+                }
+            });
+        }
+        
+        function drawLine(svg, from, to, color) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            const fromRect = from.getBoundingClientRect();
+            const toRect = to.getBoundingClientRect();
+            const diagramRect = document.getElementById('diagram').getBoundingClientRect();
+            
+            line.setAttribute('x1', fromRect.left + fromRect.width/2 - diagramRect.left);
+            line.setAttribute('y1', fromRect.top + fromRect.height/2 - diagramRect.top);
+            line.setAttribute('x2', toRect.left + toRect.width/2 - diagramRect.left);
+            line.setAttribute('y2', toRect.top + toRect.height/2 - diagramRect.top);
+            line.setAttribute('class', 'connection');
+            line.setAttribute('stroke', color);
+            
+            svg.appendChild(line);
+        }
+        
+        // Use case дарах үед мэдээлэл харуулах
+        document.querySelectorAll('.use-case').forEach(useCase => {
+            useCase.addEventListener('click', function() {
+                const caseId = this.getAttribute('data-case');
+                const info = useCaseInfo[caseId];
+                
+                if (info) {
+                    document.getElementById('infoTitle').textContent = info.title;
+                    document.getElementById('infoContent').textContent = info.content;
+                    document.getElementById('infoPanel').classList.add('active');
+                }
+            });
+        });
+        
+        // Эхлүүлэх
+        window.addEventListener('load', drawConnections);
+        window.addEventListener('resize', drawConnections);
+    </script>
+</body>
+</html>

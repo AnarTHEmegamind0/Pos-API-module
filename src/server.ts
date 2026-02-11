@@ -3,13 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cron from "node-cron";
-
 import { PosApiWrapper } from "./wrapper.js";
-import type {
-  DirectBillRequest,
-  DeleteBillRequest,
-  InputBillRequest,
-} from "./types.js";
 
 // DB helpers
 import {
@@ -28,6 +22,9 @@ import { logsRouter } from "./routes/logs.js";
 import { settingsRouter } from "./routes/settings.js";
 import { ebarimtInfoRouter } from "./routes/ebarimt-info.js";
 
+// -----------------------------
+// Boot DB
+// -----------------------------
 (async () => {
   await initDb();
   console.log("Database ready.");
@@ -35,36 +32,93 @@ import { ebarimtInfoRouter } from "./routes/ebarimt-info.js";
 
 console.log("POS Service initialized. Waiting for requests...\n");
 
+// -----------------------------
+// Wrapper (ST-Ebarimt)
+// -----------------------------
 const posapi = new PosApiWrapper({
-  notifyError: (msg: string) => console.error(`[POS Error] ${msg}\n`),
-  notifySuccess: (msg: string) => console.log(`[POS Success] ${msg}\n`),
+  notifyError: (msg) => console.error(`[POS Error] ${msg}\n`),
+  notifySuccess: (msg) => console.log(`[POS Success] ${msg}\n`),
 });
 
 const app = express();
+app.disable("x-powered-by");
 
-// CORS тохиргоо - React frontend-тэй холбогдох
+// -----------------------------
+// Env + Safe logging utilities
+// -----------------------------
+const isProd = process.env.NODE_ENV === "production";
+
+// mask helpers (TIN, etc.)
+const maskTin = (tin?: string) =>
+  tin && tin.length >= 4 ? `${tin.slice(0, 2)}******${tin.slice(-2)}` : tin;
+
+const summarizeBillPayload = (p: any) => ({
+  orderId: p?.orderId,
+  merchantTin: maskTin(p?.merchantTin),
+  customerTin: maskTin(p?.customerTin),
+  type: p?.type,
+  totalAmount: p?.totalAmount ?? p?.amount,
+  force: !!p?.force,
+  itemsCount: Array.isArray(p?.items) ? p.items.length : undefined,
+});
+
+const safeResultSummary = (r: any) => ({
+  success: r?.success,
+  status: r?.status,
+  id: r?.data?.id,
+  // qrData, lottery зэрэг эмзэг/урт талбаруудыг log хийхгүй
+});
+
+// controlled logs (prod дээр full dump хийхгүй)
+const logInfo = (...args: any[]) => console.log(...args);
+const logDebug = (...args: any[]) => {
+  if (!isProd) console.log(...args);
+};
+const logWarn = (...args: any[]) => console.warn(...args);
+const logError = (...args: any[]) => console.error(...args);
+
+// -----------------------------
+// CORS
+// -----------------------------
+const ALLOWED_ORIGINS = new Set([
+  "https://erp.itsystem.mn",
+  "https://cdn.itsystem.mn",
+]);
+
+if (!isProd) {
+  ALLOWED_ORIGINS.add("http://localhost:3000");
+  ALLOWED_ORIGINS.add("http://127.0.0.1:3000");
+}
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000", // React development
-      "http://127.0.0.1:3000",
-      "https://posapi.itsystem.mn", // Production
-      "http://posapi.itsystem.mn",
-      "http://erp.itsystem.mn",
-      "https://erp.itsystem.mn",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: (origin, cb) => {
+      // Origin байхгүй хүсэлтүүд: server-to-server, curl/postman гэх мэт.
+      // Таны Apache rule no-origin-г 403 хийж байгаа тул бодлого зөрчихгүй.
+      if (!origin) return cb(null, true);
+
+      if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+
+      return cb(new Error("CORS: Origin not allowed"), false);
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-API-KEY"],
     credentials: true,
-  }),
+    maxAge: 86400,
+  })
 );
 
-app.use(express.json());
+// -----------------------------
+// Body limit (DoS хамгаалалт)
+// -----------------------------
+app.use(express.json({ limit: "1mb" }));
 
+// -----------------------------
+// Health (info leak багатай)
+// -----------------------------
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "posapi-module",
     ts: new Date().toISOString(),
   });
 });
@@ -72,26 +126,21 @@ app.get("/health", (_req, res) => {
 // ========== ADD BILL ==========
 app.post("/posapi/addBill", async (req, res) => {
   try {
-    const payload = req.body as InputBillRequest;
+    const payload = req.body;
 
-    // === CONSOLE LOG: Ирсэн payload ===
-    console.log(
-      "[addBill] Incoming payload:",
-      JSON.stringify(payload, null, 2),
-    );
+    // PROD дээр payload бүтнээр log хийхгүй
+    logInfo("[addBill] Incoming:", summarizeBillPayload(payload));
+    logDebug("[addBill] Incoming payload (debug):", payload);
 
     // === ДАВХЦАЛТ ШАЛГАХ (force=true биш үед) ===
     if (!payload.force) {
-      const dupCheck = await checkOrderIdDuplicate(
-        payload.orderId,
-        payload.merchantTin,
-      );
-
+      const dupCheck = await checkOrderIdDuplicate(payload.orderId, payload.merchantTin);
       if (dupCheck.isDuplicate) {
-        console.log(
-          "[addBill] Duplicate orderId found:",
-          dupCheck.existingBill,
-        );
+        logWarn("[addBill] Duplicate orderId found:", {
+          orderId: payload.orderId,
+          merchantTin: maskTin(payload.merchantTin),
+        });
+
         return res.status(409).json({
           success: false,
           status: 0,
@@ -105,26 +154,17 @@ app.post("/posapi/addBill", async (req, res) => {
 
     // === force=true бол UPDATE хийх (хуучин баримтыг inactiveId-аар солих) ===
     if (payload.force) {
-      const existing = await checkOrderIdDuplicate(
-        payload.orderId,
-        payload.merchantTin,
-      );
-
+      const existing = await checkOrderIdDuplicate(payload.orderId, payload.merchantTin);
       if (existing.isDuplicate && existing.existingBill?.ebarimtId) {
-        // inactiveId-г хуучин баримтын ebarimtId-аар тохируулах
         payload.inactiveId = existing.existingBill.ebarimtId;
-        console.log(
-          "[addBill] Force update - setting inactiveId:",
-          payload.inactiveId,
-        );
+        logInfo("[addBill] Force update - inactiveId set:", payload.inactiveId);
       }
     }
 
     // Татвар тооцоолж, бүрэн формат үүсгэх
     const processResult = processBillRequest(payload);
-
     if (!processResult.success) {
-      console.error("[addBill] Process error:", processResult.message);
+      logWarn("[addBill] Process error:", processResult.message);
       return res.status(400).json({
         success: false,
         status: 0,
@@ -135,24 +175,19 @@ app.post("/posapi/addBill", async (req, res) => {
 
     const billRequest = processResult.data;
 
-    // === CONSOLE LOG: Боловсруулсан request ===
-    console.log(
-      "[addBill] Processed request:",
-      JSON.stringify(billRequest, null, 2),
-    );
+    // PROD дээр billRequest бүтнээр log хийхгүй
+    logDebug("[addBill] Processed request (debug):", billRequest);
 
     // ST-Ebarimt руу илгээх
     const result = await posapi.POST_BILL(billRequest);
 
-    // === CONSOLE LOG: Response ===
-    console.log(
-      "[addBill] ST-Ebarimt response:",
-      JSON.stringify(result, null, 2),
-    );
+    // PROD дээр зөвхөн summary log
+    logInfo("[addBill] ST response:", safeResultSummary(result));
+    logDebug("[addBill] ST full response (debug):", result);
 
     return res.json(result);
   } catch (err: any) {
-    console.error("[addBill] Exception:", err);
+    logError("[addBill] Exception:", err);
     return res.status(500).json({
       success: false,
       status: 0,
@@ -166,19 +201,16 @@ app.post("/posapi/addBill", async (req, res) => {
 // Input: { ebarimtId: string, ...шинэ InputBillRequest (orderId-гүй байж болно) }
 app.post("/posapi/updateBill", async (req, res) => {
   try {
-    const payload = req.body as InputBillRequest & { ebarimtId?: string };
+    const payload = req.body;
 
-    // === CONSOLE LOG: Ирсэн payload ===
-    console.log(
-      "[updateBill] Incoming payload:",
-      JSON.stringify(payload, null, 2),
-    );
+    logInfo("[updateBill] Incoming:", summarizeBillPayload(payload));
+    logDebug("[updateBill] Incoming payload (debug):", payload);
 
     const { ebarimtId } = payload;
 
     // Validation: ebarimtId эсвэл orderId байх ёстой
     if (!ebarimtId && !payload.orderId) {
-      console.error("[updateBill] Error: ebarimtId or orderId is required");
+      logWarn("[updateBill] Error: ebarimtId or orderId is required");
       return res.status(400).json({
         success: false,
         status: 0,
@@ -192,7 +224,7 @@ app.post("/posapi/updateBill", async (req, res) => {
     if (ebarimtId) {
       existingReceipt = await findReceiptByEbarimtId(ebarimtId);
       if (!existingReceipt) {
-        console.error("[updateBill] Error: No existing bill found for ebarimtId:", ebarimtId);
+        logWarn("[updateBill] No existing bill for ebarimtId:", ebarimtId);
         return res.status(404).json({
           success: false,
           status: 0,
@@ -200,22 +232,19 @@ app.post("/posapi/updateBill", async (req, res) => {
           data: null,
         });
       }
+
       // Хуучин баримтын orderId, merchantTin-ийг payload-д нэмэх
-      if (!payload.orderId) {
-        payload.orderId = existingReceipt.orderId;
-      }
-      if (!payload.merchantTin) {
-        payload.merchantTin = existingReceipt.merchantTin;
-      }
+      if (!payload.orderId) payload.orderId = existingReceipt.orderId;
+      if (!payload.merchantTin) payload.merchantTin = existingReceipt.merchantTin;
+
       // inactiveId тохируулах
       payload.inactiveId = ebarimtId;
     }
 
     // Татвар тооцоолж, бүрэн формат үүсгэх
     const processResult = processBillRequest(payload);
-
     if (!processResult.success) {
-      console.error("[updateBill] Process error:", processResult.message);
+      logWarn("[updateBill] Process error:", processResult.message);
       return res.status(400).json({
         success: false,
         status: 0,
@@ -236,7 +265,7 @@ app.post("/posapi/updateBill", async (req, res) => {
       }
 
       if (!existing?.ebarimtId) {
-        console.error("[updateBill] Error: No existing bill found for OrderId:", payload.orderId);
+        logWarn("[updateBill] No existing bill for OrderId:", payload.orderId);
         return res.status(404).json({
           success: false,
           status: 0,
@@ -248,20 +277,13 @@ app.post("/posapi/updateBill", async (req, res) => {
       billRequest.inactiveId = existing.ebarimtId;
     }
 
-    // === CONSOLE LOG: Боловсруулсан request ===
-    console.log(
-      "[updateBill] Processed request:",
-      JSON.stringify(billRequest, null, 2),
-    );
+    logDebug("[updateBill] Processed request (debug):", billRequest);
 
     // ST-Ebarimt руу илгээх
     const result = await posapi.POST_BILL(billRequest);
 
-    // === CONSOLE LOG: Response ===
-    console.log(
-      "[updateBill] ST-Ebarimt response:",
-      JSON.stringify(result, null, 2),
-    );
+    logInfo("[updateBill] ST response:", safeResultSummary(result));
+    logDebug("[updateBill] ST full response (debug):", result);
 
     // Амжилттай болсны дараа pos_api_update_logs-д хадгалах
     if (result.success && billRequest.inactiveId && result.data?.id) {
@@ -272,14 +294,18 @@ app.post("/posapi/updateBill", async (req, res) => {
         date: new Date(),
         merchantTin: billRequest.merchantTin,
       });
-      console.log(
-        `[updateBill] Log saved - OldId: ${billRequest.inactiveId}, NewId: ${result.data.id}`,
-      );
+
+      logInfo("[updateBill] Log saved:", {
+        orderId: billRequest.orderId,
+        oldId: billRequest.inactiveId,
+        newId: result.data.id,
+        merchantTin: maskTin(billRequest.merchantTin),
+      });
     }
 
     return res.json(result);
   } catch (err: any) {
-    console.error("[updateBill] Exception:", err);
+    logError("[updateBill] Exception:", err);
     return res.status(500).json({
       success: false,
       status: 0,
@@ -292,7 +318,7 @@ app.post("/posapi/updateBill", async (req, res) => {
 // ========== DELETE BILL ==========
 app.post("/posapi/deleteBill", async (req, res) => {
   try {
-    const payload = req.body as DeleteBillRequest;
+    const payload = req.body;
 
     if (!payload.ebarimtId) {
       return res.status(400).json({
@@ -304,8 +330,14 @@ app.post("/posapi/deleteBill", async (req, res) => {
     }
 
     const result = await posapi.DELETE_BILL(payload);
+
+    // PROD дээр summary log
+    logInfo("[deleteBill] ST response:", safeResultSummary(result));
+    logDebug("[deleteBill] ST full response (debug):", result);
+
     return res.json(result);
   } catch (err: any) {
+    logError("[deleteBill] Exception:", err);
     return res.status(500).json({
       success: false,
       status: 0,
@@ -319,8 +351,11 @@ app.post("/posapi/deleteBill", async (req, res) => {
 app.post("/posapi/sendBills", async (_req, res) => {
   try {
     const result = await posapi.SEND_BILLS();
+    logInfo("[sendBills] result:", safeResultSummary(result));
+    logDebug("[sendBills] full result (debug):", result);
     return res.json(result);
   } catch (err: any) {
+    logError("[sendBills] Exception:", err);
     return res.status(500).json({
       success: false,
       message: err?.message ?? "Failed to send bills",
@@ -356,6 +391,7 @@ app.get("/posapi/receipt/:orderId", async (req, res) => {
       data: receipt,
     });
   } catch (err: any) {
+    logError("[receipt] Exception:", err);
     return res.status(500).json({
       success: false,
       message: err?.message ?? "Failed to get receipt",
@@ -372,19 +408,25 @@ app.use("/posapi", ebarimtInfoRouter);
 app.use((_req, res) => res.status(404).json({ error: "Not Found" }));
 
 const PORT = Number(process.env.PORT) || 4001;
-app.listen(PORT, () => {
-  console.log(`POS Wrapper API running -> http://localhost:${PORT}`);
-  console.log(`Base endpoint: http://localhost:${PORT}/posapi`);
+
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(`POS Wrapper API running -> http://127.0.0.1:${PORT}`);
+  console.log(`Base endpoint: http://127.0.0.1:${PORT}/posapi`);
 });
+
+
 // ========== DAILY SCHEDULED TASK TO SEND BILLS ==========
-cron.schedule('59 23 * * *', async () => {
-  console.log(' Өнөөдрийн бүх баримтийг Ebarimt луу баримт илгээж байна...');
-  try {
-    const result = await posapi.SEND_BILLS();
-    console.log(' Илгээсэн:', result);
-  } catch (err) {
-    console.error(' Алдаа:', err);
-  }
-}, {
-  timezone: 'Asia/Ulaanbaatar'
-});
+cron.schedule(
+  "59 23 * * *",
+  async () => {
+    logInfo("[cron] Sending today's bills to Ebarimt...");
+    try {
+      const result = await posapi.SEND_BILLS();
+      logInfo("[cron] SEND_BILLS result:", safeResultSummary(result));
+      logDebug("[cron] SEND_BILLS full (debug):", result);
+    } catch (err: any) {
+      logError("[cron] Error:", err);
+    }
+  },
+  { timezone: "Asia/Ulaanbaatar" }
+);
